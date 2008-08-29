@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<BugCollection version="1.3.4" sequence="0" timestamp="1217853198000" analysisTimestamp="1217853241541" release="">
+  <Project filename="&lt;&lt;unnamed project&gt;&gt;" projectName="testcases">
+    <Jar>/home/ikonv/java/msu/teachable/secbugs/build/ant/tests/cases</Jar>
+    <AuxClasspathEntry>/home/ikonv/java/msu/teachable/secbugs/build/ant/annotations</AuxClasspathEntry>
+    <SrcDir>/home/ikonv/java/msu/teachable/secbugs/tests/cases/src/cases</SrcDir>
+    <SuppressionFilter>
+      <LastVersion value="-1" relOp="NEQ"/>
+    </SuppressionFilter>
+  </Project>
+  <BugInstance type="NP_NULL_PARAM_DEREF_ALL_TARGETS_DANGEROUS" priority="2" abbrev="NP" category="CORRECTNESS">
+    <Class classname="su.msu.cs.lvk.secbugs.cases.TaintedCase">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Class>
+    <Method classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" name="foo1" signature="()V" isStatic="false">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="54" end="55" startBytecode="0" endBytecode="51" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Method>
+    <Method classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" name="foo" signature="(Ljava/lang/Object;)V" isStatic="false" role="METHOD_CALLED">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="58" end="59" startBytecode="0" endBytecode="61" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Method>
+    <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="54" end="54" startBytecode="2" endBytecode="2" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    <Int value="1" role="INT_NULL_ARG"/>
+    <Method classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" name="foo" signature="(Ljava/lang/Object;)V" isStatic="false" role="METHOD_DANGEROUS_TARGET_ACTUAL_GUARANTEED_NULL">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="58" end="59" startBytecode="0" endBytecode="61" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Method>
+    <Property name="edu.umd.cs.findbugs.detect.NullArgumentWarningProperty.MONOMORPHIC_CALL_SITE" value="true"/>
+    <Property name="edu.umd.cs.findbugs.detect.NullArgumentWarningProperty.ARG_DEFINITELY_NULL" value="true"/>
+    <Property name="edu.umd.cs.findbugs.detect.NullArgumentWarningProperty.ACTUAL_PARAMETER_GUARANTEED_NULL" value="true"/>
+    <Property name="edu.umd.cs.findbugs.detect.NullArgumentWarningProperty.ALL_DANGEROUS_TARGETS" value="true"/>
+  </BugInstance>
+  <BugInstance type="TI_TAINTED_INJECTION" priority="2" abbrev="TI" category="WEB_VULNERABILITY">
+    <Class classname="su.msu.cs.lvk.secbugs.cases.TaintedCase">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Class>
+    <Method classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" name="assignment" signature="()V" isStatic="false">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="38" end="41" startBytecode="0" endBytecode="94" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Method>
+    <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="40" end="40" startBytecode="17" endBytecode="17" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java" role="TAINTED_PARAMETER"/>
+  </BugInstance>
+  <BugInstance type="TI_TAINTED_INJECTION" priority="2" abbrev="TI" category="WEB_VULNERABILITY">
+    <Class classname="su.msu.cs.lvk.secbugs.cases.TaintedCase">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Class>
+    <Method classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" name="branch" signature="()V" isStatic="false">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="26" end="34" startBytecode="0" endBytecode="130" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Method>
+    <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="30" end="30" startBytecode="34" endBytecode="34" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java" role="TAINTED_PARAMETER"/>
+  </BugInstance>
+  <BugInstance type="TI_TAINTED_INJECTION" priority="2" abbrev="TI" category="WEB_VULNERABILITY">
+    <Class classname="su.msu.cs.lvk.secbugs.cases.TaintedCase">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Class>
+    <Method classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" name="oneBlock" signature="()V" isStatic="false">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="20" end="22" startBytecode="0" endBytecode="78" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Method>
+    <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="21" end="21" startBytecode="15" endBytecode="15" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java" role="TAINTED_PARAMETER"/>
+  </BugInstance>
+  <BugInstance type="TQ_MAYBE_SOURCE_VALUE_REACHES_ALWAYS_SINK" priority="2" abbrev="TQ" category="CORRECTNESS">
+    <Class classname="su.msu.cs.lvk.secbugs.cases.TaintedCase">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Class>
+    <Method classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" name="assignment" signature="()V" isStatic="false">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="38" end="41" startBytecode="0" endBytecode="94" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Method>
+    <Class classname="su.msu.cs.lvk.secbugs.annotations.Sensitive" role="TYPE_ANNOTATION">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.annotations.Sensitive"/>
+    </Class>
+    <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="38" end="38" startBytecode="6" endBytecode="6" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java" role="SOURCE_LINE_VALUE_SOURCE"/>
+    <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="40" end="40" startBytecode="17" endBytecode="17" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java" role="SOURCE_LINE_VALUE_SINK"/>
+  </BugInstance>
+  <BugInstance type="TQ_MAYBE_SOURCE_VALUE_REACHES_ALWAYS_SINK" priority="2" abbrev="TQ" category="CORRECTNESS">
+    <Class classname="su.msu.cs.lvk.secbugs.cases.TaintedCase">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Class>
+    <Method classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" name="interCallee" signature="(Ljava/lang/String;)V" isStatic="false">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="50" end="51" startBytecode="0" endBytecode="64" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Method>
+    <Class classname="su.msu.cs.lvk.secbugs.annotations.Sensitive" role="TYPE_ANNOTATION">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.annotations.Sensitive"/>
+    </Class>
+    <LocalVariable name="tainted" register="1" pc="0" role="LOCAL_VARIABLE_PARAMETER_VALUE_SOURCE_NAMED"/>
+    <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="50" end="50" startBytecode="5" endBytecode="5" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java" role="SOURCE_LINE_VALUE_SINK"/>
+  </BugInstance>
+  <BugInstance type="TQ_MAYBE_SOURCE_VALUE_REACHES_ALWAYS_SINK" priority="2" abbrev="TQ" category="CORRECTNESS">
+    <Class classname="su.msu.cs.lvk.secbugs.cases.TaintedCase">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Class>
+    <Method classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" name="oneBlock" signature="()V" isStatic="false">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="20" end="22" startBytecode="0" endBytecode="78" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Method>
+    <Class classname="su.msu.cs.lvk.secbugs.annotations.Sensitive" role="TYPE_ANNOTATION">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.annotations.Sensitive"/>
+    </Class>
+    <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="20" end="20" startBytecode="6" endBytecode="6" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java" role="SOURCE_LINE_VALUE_SOURCE"/>
+    <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="21" end="21" startBytecode="15" endBytecode="15" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java" role="SOURCE_LINE_VALUE_SINK"/>
+  </BugInstance>
+  <BugInstance type="TQ_MAYBE_SOURCE_VALUE_REACHES_ALWAYS_SINK" priority="2" abbrev="TQ" category="CORRECTNESS">
+    <Class classname="su.msu.cs.lvk.secbugs.cases.TaintedCase">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Class>
+    <Method classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" name="untainted" signature="()V" isStatic="false">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="14" end="16" startBytecode="0" endBytecode="78" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java"/>
+    </Method>
+    <Class classname="su.msu.cs.lvk.secbugs.annotations.Sensitive" role="TYPE_ANNOTATION">
+      <SourceLine classname="su.msu.cs.lvk.secbugs.annotations.Sensitive"/>
+    </Class>
+    <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="14" end="14" startBytecode="6" endBytecode="6" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java" role="SOURCE_LINE_VALUE_SOURCE"/>
+    <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="15" end="15" startBytecode="15" endBytecode="15" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java" role="SOURCE_LINE_VALUE_SINK"/>
+  </BugInstance>
+  <Errors></Errors>
+  <FindBugsSummary timestamp="Mon, 4 Aug 2008 16:33:18 +0400" total_classes="4" total_bugs="8" total_size="70" num_packages="1" cpu_seconds="1.33" clock_seconds="8.22" peak_mbytes="41.75" alloc_mbytes="762.12" gc_seconds="0.29" priority_2="8">
+    <PackageStats package="su.msu.cs.lvk.secbugs.cases" total_bugs="8" total_types="4" total_size="70" priority_2="8">
+      <ClassStats class="su.msu.cs.lvk.secbugs.cases.DataSource" sourceFile="DataSource.java" interface="false" size="7" bugs="0"/>
+      <ClassStats class="su.msu.cs.lvk.secbugs.cases.SensitiveSinks" sourceFile="SensitiveSinks.java" interface="false" size="9" bugs="0"/>
+      <ClassStats class="su.msu.cs.lvk.secbugs.cases.TaintedCase" sourceFile="TaintedCase.java" interface="false" size="49" bugs="8" priority_2="8"/>
+      <ClassStats class="su.msu.cs.lvk.secbugs.cases.TaintedSource" sourceFile="TaintedSource.java" interface="false" size="5" bugs="0"/>
+    </PackageStats>
+  </FindBugsSummary>
+  <ClassFeatures></ClassFeatures>
+  <History></History>
+</BugCollection>

@@ -1,0 +1,22 @@
+<FindbugsPlugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:noNamespaceSchemaLocation="findbugsplugin.xsd"
+                pluginid="su.msu.cs.lvk.secbugs"
+                defaultenabled="true"
+                provider="Teachable Static Analysis Workbench"
+                website="http://www.owasp.org/index.php/Category:OWASP_Teachable_Static_Analysis_Workbench_Project">
+
+    <EngineRegistrar class="su.msu.cs.lvk.secbugs.EngineRegistrar"/>
+
+    <OrderingConstraints>
+        <SplitPass>
+            <Earlier class="su.msu.cs.lvk.secbugs.detect.TaintnessDetector"/>
+            <Later class="su.msu.cs.lvk.secbugs.detect.TaintedInjection"/>
+        </SplitPass>
+    </OrderingConstraints>
+
+    <Detector class="su.msu.cs.lvk.secbugs.detect.TaintnessDetector" speed="slow"/>
+
+    <Detector class="su.msu.cs.lvk.secbugs.detect.TaintedInjection" speed="slow"/>
+
+    <BugPattern type="TI_TAINTED_INJECTION" abbrev="TI" category="WEB_VULNERABILITY"/>
+</FindbugsPlugin>
