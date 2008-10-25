@@ -25,12 +25,10 @@ public class TaintnessDataflowFactory extends AnalysisFactory<TaintnessDataflow>
         ReverseDepthFirstSearch rdfs = getReverseDepthFirstSearch(analysisCache, descriptor);
 
 
-        TaintnessAnalysis taintnessAnalysis = new TaintnessAnalysis(methodGen, cfg, rdfs, dfs);
-
-        // Set return value and parameter databases
-        taintnessAnalysis.setClassAndMethod(new JavaClassAndMethod(
+        JavaClassAndMethod javaClassAndMethod = new JavaClassAndMethod(
                 getJavaClass(analysisCache, descriptor.getClassDescriptor()),
-                getMethod(analysisCache, descriptor)));
+                getMethod(analysisCache, descriptor));
+        TaintnessAnalysis taintnessAnalysis = new TaintnessAnalysis(methodGen, cfg, rdfs, dfs, javaClassAndMethod);
 
         TaintnessDataflow taintnessDataflow = new TaintnessDataflow(cfg, taintnessAnalysis);
         taintnessDataflow.execute();

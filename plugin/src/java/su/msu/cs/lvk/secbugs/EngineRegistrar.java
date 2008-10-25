@@ -1,12 +1,11 @@
 package su.msu.cs.lvk.secbugs;
 
-import edu.umd.cs.findbugs.classfile.IAnalysisCache;
-import edu.umd.cs.findbugs.classfile.IAnalysisEngineRegistrar;
-import edu.umd.cs.findbugs.classfile.IMethodAnalysisEngine;
-import edu.umd.cs.findbugs.classfile.ReflectionDatabaseFactory;
+import edu.umd.cs.findbugs.classfile.*;
 import su.msu.cs.lvk.secbugs.bta.ParameterTaintnessPropertyDatabase;
 import su.msu.cs.lvk.secbugs.bta.TaintnessDataflowFactory;
-import su.msu.cs.lvk.secbugs.ta.IsParameterTaintedPropertyDatabase;
+import su.msu.cs.lvk.secbugs.bta.StackDepthDataflowFactory;
+import su.msu.cs.lvk.secbugs.ma.KeyIndicatorAnnotationDatabase;
+import su.msu.cs.lvk.secbugs.ma.KeyIndicatorPropertyDatabase;
 import su.msu.cs.lvk.secbugs.ta.IsResultTaintedPropertyDatabase;
 import su.msu.cs.lvk.secbugs.ta.TaintAnnotationDatabase;
 import su.msu.cs.lvk.secbugs.ta.TaintValueDataflowFactory;
@@ -17,20 +16,21 @@ import su.msu.cs.lvk.secbugs.ta.TaintValueDataflowFactory;
 public class EngineRegistrar implements IAnalysisEngineRegistrar {
     private static IMethodAnalysisEngine<?>[] methodAnalysisEngineList = {
             new TaintValueDataflowFactory(),
-            new TaintnessDataflowFactory()
+            new TaintnessDataflowFactory(),
+            new StackDepthDataflowFactory()
     };
 
-    private static Class<?>[] databaseClassList = {
-            TaintAnnotationDatabase.class,
-            IsParameterTaintedPropertyDatabase.class,
-            IsResultTaintedPropertyDatabase.class,
-            ParameterTaintnessPropertyDatabase.class
+    private static final IDatabaseFactory<?>[] databaseFactoryList = {
+            new ReflectionDatabaseFactory<TaintAnnotationDatabase>(TaintAnnotationDatabase.class),
+            new ReflectionDatabaseFactory<KeyIndicatorAnnotationDatabase>(KeyIndicatorAnnotationDatabase.class),
+            new ReflectionDatabaseFactory<IsResultTaintedPropertyDatabase>(IsResultTaintedPropertyDatabase.class),
+            new ReflectionDatabaseFactory<ParameterTaintnessPropertyDatabase>(ParameterTaintnessPropertyDatabase.class),
+            new ReflectionDatabaseFactory<KeyIndicatorPropertyDatabase>(KeyIndicatorPropertyDatabase.class)
     };
 
     public void registerAnalysisEngines(IAnalysisCache analysisCache) {
-        for (Class cls : databaseClassList) {
-            // TODO: how to write it properly using generics???
-            analysisCache.registerDatabaseFactory(cls, new ReflectionDatabaseFactory(cls));
+        for (IDatabaseFactory<?> engine : databaseFactoryList) {
+            engine.registerWith(analysisCache);
         }
 
         for (IMethodAnalysisEngine<?> engine : methodAnalysisEngineList) {

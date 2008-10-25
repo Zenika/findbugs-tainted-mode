@@ -1,5 +1,6 @@
 package su.msu.cs.lvk.secbugs.bta;
 
+import edu.umd.cs.findbugs.SourceLineAnnotation;
 import su.msu.cs.lvk.secbugs.ta.TaintValue;
 
 /**
@@ -16,24 +17,35 @@ public class TaintnessValue {
     public static final TaintValue SENSITIVE_VALUE = new TaintValue();
 
     private int mask = TAINTED_VALUE;
+    /**
+     * Source line, where taint value is consumed.
+     */
+    private SourceLineAnnotation sinkSourceLine;
 
     public TaintnessValue() {
     }
 
     public TaintnessValue(TaintnessValue source) {
         this.mask = source.mask;
+        this.sinkSourceLine = source.sinkSourceLine;
     }
 
     public void copyFrom(TaintnessValue other) {
         this.mask = other.mask;
+        this.sinkSourceLine = other.sinkSourceLine;
     }
 
     public void meetWith(TaintnessValue other) {
         if ((other.mask & BOTTOM_VALUE) == BOTTOM_VALUE) {
             this.mask = BOTTOM_VALUE;
+            this.sinkSourceLine = null;
         }
 
         this.mask |= other.mask;
+
+        if (this.sinkSourceLine == null) {
+            this.sinkSourceLine = other.sinkSourceLine;
+        } // else keep the first source line
     }
 
     public static TaintnessValue merge(TaintnessValue a, TaintnessValue b) {
@@ -55,7 +67,7 @@ public class TaintnessValue {
     }
 
     public boolean getTainted() {
-        return (mask & TAINTED_VALUE) != 0 ;
+        return (mask & TAINTED_VALUE) != 0;
     }
 
     public void setUntainted(boolean untainted) {
@@ -67,20 +79,29 @@ public class TaintnessValue {
     }
 
     public boolean getUntainted() {
-        return (mask & UNTAINTED_VALUE) != 0 ;
+        return (mask & UNTAINTED_VALUE) != 0;
+    }
+
+    public SourceLineAnnotation getSinkSourceLine() {
+        return sinkSourceLine;
+    }
+
+    public void setSinkSourceLine(SourceLineAnnotation sinkSourceLine) {
+        this.sinkSourceLine = sinkSourceLine;
     }
 
     public String toString() {
-        StringBuilder builder = new StringBuilder("[");
-        if ((mask & TAINTED_VALUE) == TAINTED_VALUE) {
-            builder.append("T");
+        if (getTainted()) {
+            if (getUntainted()) {
+                return "X";
+            } else {
+                return "T";
+            }
+        } else if (getUntainted()) {
+            return "U";
+        } else {
+            return "?";
         }
-        if ((mask & UNTAINTED_VALUE) == UNTAINTED_VALUE) {
-            builder.append("U");
-        }
-        builder.append("]");
-
-        return builder.toString();
     }
 
     public boolean equals(Object o) {
@@ -89,9 +110,7 @@ public class TaintnessValue {
 
         TaintnessValue that = (TaintnessValue) o;
 
-        if (mask != that.mask) return false;
-
-        return true;
+        return mask == that.mask;
     }
 
     public int hashCode() {

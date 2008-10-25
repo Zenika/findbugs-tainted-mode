@@ -3,6 +3,7 @@ package su.msu.cs.lvk.secbugs.bta;
 import edu.umd.cs.findbugs.SystemProperties;
 import edu.umd.cs.findbugs.ba.*;
 import edu.umd.cs.findbugs.classfile.CheckedAnalysisException;
+import edu.umd.cs.findbugs.classfile.Global;
 import org.apache.bcel.generic.Instruction;
 import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.MethodGen;
@@ -21,18 +22,18 @@ public class TaintnessAnalysis extends BackwardFrameDataflowAnalysis<TaintnessVa
     }
 
     private MethodGen methodGen;
-    private CFG cfg;
     private JavaClassAndMethod javaClassAndMethod;
     private TaintnessFrameModelingVisitor visitor;
 
     private TaintnessFrame cachedEntryFact;
 
     public TaintnessAnalysis(MethodGen methodGen, CFG cfg,
-                             ReverseDepthFirstSearch rdfs, DepthFirstSearch dfs) throws CheckedAnalysisException {
+                             ReverseDepthFirstSearch rdfs, DepthFirstSearch dfs, JavaClassAndMethod javaClassAndMethod)
+            throws CheckedAnalysisException {
         super(rdfs, dfs);
         this.methodGen = methodGen;
-        this.cfg = cfg;
-        this.visitor = new TaintnessFrameModelingVisitor(
+        this.javaClassAndMethod = javaClassAndMethod;
+        this.visitor = new TaintnessFrameModelingVisitor(javaClassAndMethod,
                 methodGen.getConstantPool());
     }
 
@@ -90,73 +91,38 @@ public class TaintnessAnalysis extends BackwardFrameDataflowAnalysis<TaintnessVa
     }
 
     public void meetInto(TaintnessFrame fact, Edge edge, TaintnessFrame result) throws DataflowAnalysisException {
-        // TODO: write it later
         meetInto(fact, edge, result, true);
     }
 
     public void meetInto(TaintnessFrame fact, Edge edge, TaintnessFrame result, boolean propagatePhiNodeInformation)
             throws DataflowAnalysisException {
-        if (fact.isValid()) {
-            TaintnessFrame tmpFact = null;
+        TaintnessFrame tmpFact = fact;
+        if (edge.getSource().isExceptionThrower() && edge.getType() == EdgeTypes.UNHANDLED_EXCEPTION_EDGE
+                || edge.getType() == EdgeTypes.HANDLED_EXCEPTION_EDGE) {
+            // Exception thrower - restore operand stack
+            tmpFact = modifyFrame(fact, null);
 
-            final BasicBlock srcBlock = edge.getSource();
-
-            if (srcBlock.isExceptionThrower()) {
-                // Exception thrower - get identity
-                if (result.isValid()) {
-                    tmpFact = modifyFrame(result, tmpFact);
+            XMethod method = XFactory.createXMethod(javaClassAndMethod);
+            try {
+                StackDepthDataflow dataflow = Global.getAnalysisCache()
+                        .getMethodAnalysis(StackDepthDataflow.class, method.getMethodDescriptor());
+                BasicBlock source = edge.getSource();
+                Location loc = new Location(source.getExceptionThrower(), source);
+                StackDepth depth = dataflow.getFactAtLocation(loc);
+                tmpFact.clearStack();
+                for (int i = 0; i < depth.getDepth(); ++i) {
+                    tmpFact.pushValue(new TaintnessValue());
                 }
-            } else {
-                final int edgeType = edge.getType();
-                final BasicBlock sourceBlock = edge.getSource();
-                final BasicBlock targetBlock = edge.getTarget();
-
-                // TODO: it is a perfect place to check a validation expression!
-                // If this is a fall-through edge from a null check,
-                // then we know the value checked is not null.
-                /*
-                if (sourceBlock.isNullCheck() && edgeType == FALL_THROUGH_EDGE) {
-                    ValueNumberFrame vnaFrame = vnaDataflow.getStartFact(destBlock);
-                    if (vnaFrame == null)
-                        throw new IllegalStateException("no vna frame at block entry?");
-
-                    Instruction firstInDest = edge.getTarget().getFirstInstruction().getInstruction();
-
-
-                    IsNullValue instance = fact.getInstance(firstInDest, methodGen.getConstantPool());
-
-
-                    if (instance.isDefinitelyNull()) {
-                        // If we know the variable is null, this edge is infeasible
-                        tmpFact = createFact();
-                        tmpFact.setTop();
-                    } else if (!instance.isDefinitelyNotNull()) {
-                        // If we're not sure that the instance is definitely non-null,
-                        // update the is-null information for the dereferenced value.
-                        InstructionHandle kaBoomLocation = targetBlock.getFirstInstruction();
-                        ValueNumber replaceMe = vnaFrame.getInstance(firstInDest, methodGen.getConstantPool());
-                        IsNullValue noKaboomNonNullValue = IsNullValue.noKaboomNonNullValue(
-                                new Location(kaBoomLocation, targetBlock)
-                        );
-                        if (DEBUG) {
-                            System.out.println("Start vna fact: " + vnaFrame);
-                            System.out.println("inva fact: " + fact);
-                            System.out.println("\nGenerated NoKaboom value for location " + kaBoomLocation);
-                            System.out.println("Dereferenced " + instance);
-                            System.out.println("On fall through from source block " + sourceBlock);
-                        }
-                        tmpFact = replaceValues(fact, tmpFact, replaceMe, vnaFrame, targetVnaFrame, noKaboomNonNullValue);
-                    }
-                } // if (sourceBlock.isNullCheck() && edgeType == FALL_THROUGH_EDGE)
-                */
+                if (DEBUG) {
+                    System.out.println("Edge transfer (ex thr) from "
+                            + edge.getSource() + " to " + edge.getTarget() + " -> " + fact);
+                }
+            } catch (CheckedAnalysisException e) {
+                throw new DataflowAnalysisException("Error handling throw block", e);
             }
-            if (tmpFact != null) {
-                fact = tmpFact;
-            }
-        } // if (fact.isValid())
+        }
 
-        // Normal dataflow merge
-        mergeInto(fact, result);
+        mergeInto(tmpFact, result);
     }
 
     @Override
@@ -183,9 +149,5 @@ public class TaintnessAnalysis extends BackwardFrameDataflowAnalysis<TaintnessVa
         meetInto(predFact, edge, result, false);
 
         return result;
-    }
-
-    public void setClassAndMethod(JavaClassAndMethod javaClassAndMethod) {
-        this.javaClassAndMethod = javaClassAndMethod;
     }
 }

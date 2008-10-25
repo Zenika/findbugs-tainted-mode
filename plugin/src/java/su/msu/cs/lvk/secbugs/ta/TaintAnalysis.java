@@ -4,10 +4,11 @@ import edu.umd.cs.findbugs.SystemProperties;
 import edu.umd.cs.findbugs.ba.*;
 import edu.umd.cs.findbugs.classfile.CheckedAnalysisException;
 import edu.umd.cs.findbugs.classfile.Global;
-import org.apache.bcel.generic.Instruction;
-import org.apache.bcel.generic.InstructionHandle;
-import org.apache.bcel.generic.MethodGen;
-import org.apache.bcel.generic.Type;
+import edu.umd.cs.findbugs.classfile.MethodDescriptor;
+import org.apache.bcel.Constants;
+import org.apache.bcel.generic.*;
+import su.msu.cs.lvk.secbugs.ma.KeyIndicatorProperty;
+import su.msu.cs.lvk.secbugs.ma.KeyIndicatorPropertyDatabase;
 
 /**
  * @author Igor Konnov
@@ -22,18 +23,17 @@ public class TaintAnalysis extends FrameDataflowAnalysis<TaintValue, TaintValueF
     }
 
     private MethodGen methodGen;
-    private CFG cfg;
-    private JavaClassAndMethod javaClassAndMethod;
     private TaintValueFrameModelingVisitor visitor;
 
     private TaintValueFrame cachedEntryFact;
+    private KeyIndicatorPropertyDatabase keyIndicatorPropertyDatabase;
 
-    public TaintAnalysis(MethodGen methodGen, CFG cfg, DepthFirstSearch depthFirstSearch) {
+    public TaintAnalysis(JavaClassAndMethod javaClassAndMethod, MethodGen methodGen, CFG cfg, DepthFirstSearch depthFirstSearch) throws CheckedAnalysisException {
         super(depthFirstSearch);
         this.methodGen = methodGen;
-        this.cfg = cfg;
-        this.visitor = new TaintValueFrameModelingVisitor(
+        this.visitor = new TaintValueFrameModelingVisitor(javaClassAndMethod,
                 methodGen.getConstantPool());
+        this.keyIndicatorPropertyDatabase = Global.getAnalysisCache().getDatabase(KeyIndicatorPropertyDatabase.class);
     }
 
     public TaintValueFrame createFact() {
@@ -54,16 +54,6 @@ public class TaintAnalysis extends FrameDataflowAnalysis<TaintValue, TaintValueF
 
             int numLocals = methodGen.getMaxLocals();
             boolean instanceMethod = !methodGen.isStatic();
-            XMethod xm = XFactory.createXMethod(methodGen.getClassName(),
-                    methodGen.getName(), methodGen.getSignature(), methodGen.isStatic());
-            IsParameterTaintedPropertyDatabase db;
-            try {
-                db = Global.getAnalysisCache().getDatabase(IsParameterTaintedPropertyDatabase.class);
-            } catch (CheckedAnalysisException e) {
-                throw new DataflowAnalysisException("Can't obtain parameter taintness database", e);
-            }
-
-            IsParameterTaintedProperty taintness = db.getProperty(xm.getMethodDescriptor());
 
             int paramShift = instanceMethod ? 1 : 0;
             for (int i = 0; i < numLocals; ++i) {
@@ -75,14 +65,10 @@ public class TaintAnalysis extends FrameDataflowAnalysis<TaintValue, TaintValueF
 
             Type[] argumentTypes = methodGen.getArgumentTypes();
             int slot = paramShift;
-            for (int paramIndex = 0; paramIndex < argumentTypes.length; paramIndex++) {
-                if (taintness != null && !taintness.isUntaint(paramIndex)) {
-                    cachedEntryFact.setValue(slot, new TaintValue(TaintValue.TAINTED));
-                } else {
-                    cachedEntryFact.setValue(slot, new TaintValue(TaintValue.UNTAINTED));
-                }
+            for (Type argumentType : argumentTypes) {
+                cachedEntryFact.setValue(slot, new TaintValue(TaintValue.UNTAINTED));
 
-                slot += argumentTypes[paramIndex].getSize();
+                slot += argumentType.getSize();
             }
         }
         copy(cachedEntryFact, result);
@@ -98,7 +84,6 @@ public class TaintAnalysis extends FrameDataflowAnalysis<TaintValue, TaintValueF
     }
 
     public void meetInto(TaintValueFrame fact, Edge edge, TaintValueFrame result) throws DataflowAnalysisException {
-        // TODO: write it later
         meetInto(fact, edge, result, true);
     }
 
@@ -122,46 +107,10 @@ public class TaintAnalysis extends FrameDataflowAnalysis<TaintValue, TaintValueF
             } else {
                 final int edgeType = edge.getType();
                 final BasicBlock sourceBlock = edge.getSource();
-                final BasicBlock targetBlock = edge.getTarget();
 
-                // TODO: it is a perfect place to check a validation expression!
-                // If this is a fall-through edge from a null check,
-                // then we know the value checked is not null.
-                /*
-                if (sourceBlock.isNullCheck() && edgeType == FALL_THROUGH_EDGE) {
-                    ValueNumberFrame vnaFrame = vnaDataflow.getStartFact(destBlock);
-                    if (vnaFrame == null)
-                        throw new IllegalStateException("no vna frame at block entry?");
-
-                    Instruction firstInDest = edge.getTarget().getFirstInstruction().getInstruction();
-
-
-                    IsNullValue instance = fact.getInstance(firstInDest, methodGen.getConstantPool());
-
-
-                    if (instance.isDefinitelyNull()) {
-                        // If we know the variable is null, this edge is infeasible
-                        tmpFact = createFact();
-                        tmpFact.setTop();
-                    } else if (!instance.isDefinitelyNotNull()) {
-                        // If we're not sure that the instance is definitely non-null,
-                        // update the is-null information for the dereferenced value.
-                        InstructionHandle kaBoomLocation = targetBlock.getFirstInstruction();
-                        ValueNumber replaceMe = vnaFrame.getInstance(firstInDest, methodGen.getConstantPool());
-                        IsNullValue noKaboomNonNullValue = IsNullValue.noKaboomNonNullValue(
-                                new Location(kaBoomLocation, targetBlock)
-                        );
-                        if (DEBUG) {
-                            System.out.println("Start vna fact: " + vnaFrame);
-                            System.out.println("inva fact: " + fact);
-                            System.out.println("\nGenerated NoKaboom value for location " + kaBoomLocation);
-                            System.out.println("Dereferenced " + instance);
-                            System.out.println("On fall through from source block " + sourceBlock);
-                        }
-                        tmpFact = replaceValues(fact, tmpFact, replaceMe, vnaFrame, targetVnaFrame, noKaboomNonNullValue);
-                    }
-                } // if (sourceBlock.isNullCheck() && edgeType == FALL_THROUGH_EDGE)
-                */
+                if (edgeType == Edge.IFCMP_EDGE || edgeType == Edge.FALL_THROUGH_EDGE) {
+                    tmpFact = detaintIfValidated(sourceBlock, edgeType, fact);
+                }
             }
             if (tmpFact != null) {
                 fact = tmpFact;
@@ -198,7 +147,42 @@ public class TaintAnalysis extends FrameDataflowAnalysis<TaintValue, TaintValueF
         return result;
     }
 
-    public void setClassAndMethod(JavaClassAndMethod javaClassAndMethod) {
-        this.javaClassAndMethod = javaClassAndMethod;
+    private TaintValueFrame detaintIfValidated(BasicBlock sourceBlock, int edgeType, TaintValueFrame fact) throws DataflowAnalysisException {
+        // call to validator looks like follows:
+        // invokevirtual m
+        // ifeq	n
+        InstructionHandle last = sourceBlock.getLastInstruction();
+        if (last != null) {
+            InstructionHandle prev = last.getPrev();
+            int opcode = last.getInstruction().getOpcode();
+
+            if (edgeType == Edge.FALL_THROUGH_EDGE && opcode == Constants.IFEQ
+                    || edgeType == Edge.IFCMP_EDGE && opcode == Constants.IFNE) {
+                // It may be a call to validation method,
+                // and current block is a then-branch
+                if (prev != null && prev.getInstruction() instanceof InvokeInstruction) {
+                    InvokeInstruction invoke = (InvokeInstruction) prev.getInstruction();
+                    XMethod calledMethod = XFactory.createXMethod(invoke, methodGen.getConstantPool());
+
+                    KeyIndicatorProperty prop = keyIndicatorPropertyDatabase.getProperty(calledMethod.getMethodDescriptor());
+                    if (prop != null && prop.getIndicatorType() == KeyIndicatorProperty.IndicatorType.VALIDATOR) {
+                        TaintValueFrame factBeforeCall = getFactAtLocation(new Location(prev, sourceBlock));
+                        TaintValueFrame tmpFact = modifyFrame(fact, null);
+                        for (int i = 0; i < calledMethod.getNumParams(); ++i) {
+                            int sourceIndex = factBeforeCall.getStackValueSourceIndex(i);
+                            if (sourceIndex != -1) {
+                                // Parameter value is put on the stack by STORE instruction.
+                                // Untaint local variable with source index.
+                                tmpFact.setValue(sourceIndex, new TaintValue(TaintValue.DETAINTED));
+                            }
+                        }
+
+                        return tmpFact;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 }

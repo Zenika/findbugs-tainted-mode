@@ -23,15 +23,21 @@ public class TaintValueDataflowFactory extends AnalysisFactory<TaintDataflow> {
         CFG cfg = getCFG(analysisCache, descriptor);
         DepthFirstSearch dfs = getDepthFirstSearch(analysisCache, descriptor);
 
-        TaintAnalysis taintAnalysis = new TaintAnalysis(methodGen, cfg, dfs);
-
-        // Set return value and parameter databases
-        taintAnalysis.setClassAndMethod(new JavaClassAndMethod(
-                getJavaClass(analysisCache, descriptor.getClassDescriptor()),
-                getMethod(analysisCache, descriptor)));
+        JavaClassAndMethod javaClassAndMethod;
+        try {
+            javaClassAndMethod = new JavaClassAndMethod(XFactory.createXMethod(descriptor));
+        } catch (ClassNotFoundException e) {
+            throw new CheckedAnalysisException("Can't construct javaClassAndMethod for " + descriptor, e);
+        }
+        TaintAnalysis taintAnalysis = new TaintAnalysis(javaClassAndMethod, methodGen, cfg, dfs);
 
         TaintDataflow taintDataflow = new TaintDataflow(cfg, taintAnalysis);
-        taintDataflow.execute();
+        try {
+            taintDataflow.execute();
+        } catch (AssertionError e) {
+            // too many iterations assertion
+            throw new CheckedAnalysisException("Assertion is not satisfied: " + e.getMessage());
+        }
         if (ClassContext.DUMP_DATAFLOW_ANALYSIS) {
             taintDataflow.dumpDataflow(taintAnalysis);
         }

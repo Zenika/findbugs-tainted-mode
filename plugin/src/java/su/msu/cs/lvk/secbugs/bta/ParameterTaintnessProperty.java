@@ -1,5 +1,7 @@
 package su.msu.cs.lvk.secbugs.bta;
 
+import edu.umd.cs.findbugs.SourceLineAnnotation;
+
 import java.util.BitSet;
 
 /**
@@ -19,6 +21,16 @@ public class ParameterTaintnessProperty {
     private int paramTaintnessSet;
     // bit is set if parameter was required to be certainly untainted,
     private int paramUntaintnessSet;
+
+    /**
+     * Is it a direct sink?
+     */
+    private boolean directSink;
+
+    /**
+     * Optional source line, pointing to location, where taint value is consumed by a sensitive sink.
+     */
+    private SourceLineAnnotation sinkSourceLine;
 
     /**
      * Constructor.
@@ -146,10 +158,7 @@ public class ParameterTaintnessProperty {
      * @return true if the parameter might be untaint, false otherwise
      */
     public boolean isUntaint(int param) {
-        if (param < 0 || param > 31)
-            return false;
-        else
-            return (paramUntaintnessSet & (1 << param)) != 0;
+        return !(param < 0 || param > 31) && (paramUntaintnessSet & (1 << param)) != 0;
     }
 
     /**
@@ -159,10 +168,7 @@ public class ParameterTaintnessProperty {
      * @return true if the parameter might be untaint, false otherwise
      */
     public boolean isTaint(int param) {
-        if (param < 0 || param > 31)
-            return false;
-        else
-            return (paramTaintnessSet & (1 << param)) != 0;
+        return !(param < 0 || param > 31) && (paramTaintnessSet & (1 << param)) != 0;
     }
 
     /**
@@ -244,31 +250,54 @@ public class ParameterTaintnessProperty {
      * Intersect this set with the given set.
      * Useful for summarizing the properties of multiple methods.
      *
-     * @param targetDerefParamSet another set
+     * @param target another set
      */
-    public void intersectWith(ParameterTaintnessProperty targetDerefParamSet) {
-        paramTaintnessSet &= targetDerefParamSet.paramTaintnessSet;
-        paramUntaintnessSet &= targetDerefParamSet.paramUntaintnessSet;
+    public void intersectWith(ParameterTaintnessProperty target) {
+        paramTaintnessSet &= target.paramTaintnessSet;
+        paramUntaintnessSet &= target.paramUntaintnessSet;
     }
 
     /**
      * Merge this set with the given set
      *
-     * @param targetDerefParamSet another set
+     * @param target another set
      */
-    public void mergeWith(ParameterTaintnessProperty targetDerefParamSet) {
-        targetDerefParamSet.paramTaintnessSet |= paramTaintnessSet;
-        targetDerefParamSet.paramUntaintnessSet |= paramUntaintnessSet;
+    public void mergeWith(ParameterTaintnessProperty target) {
+        target.paramTaintnessSet |= paramTaintnessSet;
+        target.paramUntaintnessSet |= paramUntaintnessSet;
+        if (target.getSinkSourceLine() == null) {
+            target.setSinkSourceLine(getSinkSourceLine());
+        }
+
+        if (!target.isDirectSink()) {
+            target.setDirectSink(isDirectSink());
+        }
     }
 
     /**
      * Make this object the same as the given one.
      *
-     * @param other another IsParameterTaintedProperty
+     * @param other another ParameterTaintnessProperty
      */
     public void copyFrom(ParameterTaintnessProperty other) {
         this.paramTaintnessSet = other.paramTaintnessSet;
         this.paramUntaintnessSet = other.paramUntaintnessSet;
+    }
+
+    public boolean isDirectSink() {
+        return directSink;
+    }
+
+    public void setDirectSink(boolean directSink) {
+        this.directSink = directSink;
+    }
+
+    public SourceLineAnnotation getSinkSourceLine() {
+        return sinkSourceLine;
+    }
+
+    public void setSinkSourceLine(SourceLineAnnotation sinkSourceLine) {
+        this.sinkSourceLine = sinkSourceLine;
     }
 
     public boolean equals(Object o) {
@@ -277,10 +306,7 @@ public class ParameterTaintnessProperty {
 
         ParameterTaintnessProperty property = (ParameterTaintnessProperty) o;
 
-        if (paramTaintnessSet != property.paramTaintnessSet) return false;
-        if (paramUntaintnessSet != property.paramUntaintnessSet) return false;
-
-        return true;
+        return paramTaintnessSet == property.paramTaintnessSet && paramUntaintnessSet == property.paramUntaintnessSet;
     }
 
     public int hashCode() {

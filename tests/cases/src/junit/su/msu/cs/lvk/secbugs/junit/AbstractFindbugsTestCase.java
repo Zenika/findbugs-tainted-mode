@@ -1,8 +1,6 @@
 package su.msu.cs.lvk.secbugs.junit;
 
-import edu.umd.cs.findbugs.BugCollection;
-import edu.umd.cs.findbugs.Project;
-import edu.umd.cs.findbugs.SortedBugCollection;
+import edu.umd.cs.findbugs.*;
 import junit.framework.TestCase;
 
 import java.io.*;
@@ -21,39 +19,92 @@ public abstract class AbstractFindbugsTestCase extends TestCase {
         String testClasspath = getTestClasspath();
         String auxClasspath = getAuxClasspath();
         String srcClasspath = getSourceClasspath();
+        FindBugs2.clearAnalysisContext();
         File filterFile = createFilterFile(targetClassName, targetMethodName, bugType);
         File outputFile = getOutputFile();
-        String[] args = {
-                executable, "-textui",
-                "-auxclasspath", auxClasspath,
-                "-sourcepath", srcClasspath,
-                "-include", filterFile.getAbsolutePath(),
-                "-xml", "-output", outputFile.getAbsolutePath(),
-                testClasspath
-        };
+
+        if (true) {
+            String[] args = {
+                    executable, "-textui",
+                    "-auxclasspath", auxClasspath,
+                    "-sourcepath", srcClasspath,
+                    "-include", filterFile.getAbsolutePath(),
+                    "-xml", "-output", outputFile.getAbsolutePath(),
+                    testClasspath
+            };
+            runFindBugsInSeparateProcess(args);
+        } else {
+            String[] args = {
+                    "-textui",
+                    "-auxclasspath", auxClasspath,
+                    "-sourcepath", srcClasspath,
+                    "-include", filterFile.getAbsolutePath(),
+                    "-xml", "-output", outputFile.getAbsolutePath(),
+                    testClasspath
+            };
+            runFindBugsInSameProcess(args);
+        }
+
+        this.project = new Project();
+        bugCollection = readCollection(this.project);
+    }
+
+    private void runFindBugsInSeparateProcess(String[] args) {
+        InputStream input = null;
         try {
             System.out.println("Executing: " + join(args, " "));
             ProcessBuilder builder = new ProcessBuilder(args);
             builder.redirectErrorStream(true);
             Process proc = builder.start();
 
-            byte[] buffer = new byte[1024];
-            InputStream input = proc.getInputStream();
-            int cnt;
-            while ((cnt = input.read(buffer)) > 0) {
-                System.out.write(buffer, 0, cnt);
+            String exceptionText = null;
+            String line;
+            input = proc.getInputStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+            while ((line = reader.readLine()) != null) {
+                System.out.println(line);
+
+                if (exceptionText == null && line.contains("Exception")) {
+                    exceptionText = line;
+                }
             }
 
             int exitCode = proc.waitFor();
             assertEquals(0, exitCode);
+
+            assertNull(exceptionText, exceptionText);
         } catch (IOException e) {
             throw new RuntimeException("Error running executable: " + join(args, " "));
         } catch (InterruptedException e) {
             // just exit
+        } finally {
+            if (input != null) {
+                try {
+                    input.close();
+                } catch (IOException e) {
+                    System.err.println("Error closing input: " + e.getMessage());
+                }
+            }
         }
+    }
 
-        this.project = new Project();
-        bugCollection = readCollection(this.project);
+    private void runFindBugsInSameProcess(String[] args) {
+        try {
+            FindBugs2 findBugs = new FindBugs2();
+            // Parse command line and configure the engine
+            TextUICommandLine commandLine = new TextUICommandLine();
+            FindBugs.processCommandLine(commandLine, args, findBugs);
+
+            findBugs.execute();
+            int missingClassCount = findBugs.getMissingClassCount();
+            int errorCount = findBugs.getErrorCount();
+
+            assertEquals(0, missingClassCount);
+            assertEquals(0, errorCount);
+        } catch (Exception e) {
+            fail("Exception in findbugs: " + e.getMessage());
+        }
+        FindBugs2.clearAnalysisContext();
     }
 
     protected BugCollection readCollection(Project project) {

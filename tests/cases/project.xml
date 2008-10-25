@@ -109,7 +109,7 @@
     <SourceLine classname="su.msu.cs.lvk.secbugs.cases.TaintedCase" start="15" end="15" startBytecode="15" endBytecode="15" sourcefile="TaintedCase.java" sourcepath="su/msu/cs/lvk/secbugs/cases/TaintedCase.java" role="SOURCE_LINE_VALUE_SINK"/>
   </BugInstance>
   <Errors></Errors>
-  <FindBugsSummary timestamp="Mon, 4 Aug 2008 16:33:18 +0400" total_classes="4" total_bugs="8" total_size="70" num_packages="1" cpu_seconds="1.33" clock_seconds="8.22" peak_mbytes="41.75" alloc_mbytes="762.12" gc_seconds="0.29" priority_2="8">
+  <FindBugsSummary timestamp="Mon, 4 Aug 2008 16:33:18 +0400" total_classes="4" total_bugs="8" total_size="70" num_packages="1" cpu_seconds="5.77" clock_seconds="1281.05" peak_mbytes="42.44" alloc_mbytes="762.12" gc_seconds="0.87" priority_2="8">
     <PackageStats package="su.msu.cs.lvk.secbugs.cases" total_bugs="8" total_types="4" total_size="70" priority_2="8">
       <ClassStats class="su.msu.cs.lvk.secbugs.cases.DataSource" sourceFile="DataSource.java" interface="false" size="7" bugs="0"/>
       <ClassStats class="su.msu.cs.lvk.secbugs.cases.SensitiveSinks" sourceFile="SensitiveSinks.java" interface="false" size="9" bugs="0"/>

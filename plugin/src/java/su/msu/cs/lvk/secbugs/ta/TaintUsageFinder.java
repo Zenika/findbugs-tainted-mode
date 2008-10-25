@@ -1,5 +1,6 @@
 package su.msu.cs.lvk.secbugs.ta;
 
+import edu.umd.cs.findbugs.SystemProperties;
 import edu.umd.cs.findbugs.ba.*;
 import edu.umd.cs.findbugs.ba.type.TypeDataflow;
 import edu.umd.cs.findbugs.ba.type.TypeFrame;
@@ -10,17 +11,16 @@ import edu.umd.cs.findbugs.classfile.MethodDescriptor;
 import edu.umd.cs.findbugs.log.Profiler;
 import org.apache.bcel.Constants;
 import org.apache.bcel.classfile.Method;
-import org.apache.bcel.generic.Instruction;
-import org.apache.bcel.generic.InstructionHandle;
-import org.apache.bcel.generic.InvokeInstruction;
-import org.apache.bcel.generic.Type;
+import org.apache.bcel.generic.*;
 import su.msu.cs.lvk.secbugs.bta.ParameterTaintnessProperty;
 import su.msu.cs.lvk.secbugs.bta.ParameterTaintnessPropertyDatabase;
+import su.msu.cs.lvk.secbugs.debug.DebugUtil;
+import su.msu.cs.lvk.secbugs.util.HierarchyUtil;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Find sensitive parameters to which tainted data may be passed.
@@ -28,12 +28,12 @@ import java.util.Set;
  * @author Igor Konnov
  */
 public class TaintUsageFinder {
+    public static final boolean DEBUG_DUMP_DATAFLOW = SystemProperties.getBoolean("sec.ti.dump.dataflow");
     private ClassContext classContext;
     private Method method;
     private TaintUsageCollector collector;
     private TaintDataflow taintDataflow;
     private TypeDataflow typeDataflow;
-    private IsParameterTaintedPropertyDatabase isParamTaintedPropertyDatabase;
     private IsResultTaintedPropertyDatabase isResultTaintedPropertyDatabase;
     private ParameterTaintnessPropertyDatabase parameterTaintnessPropertyDatabase;
     private List<Location> returnLocations;
@@ -48,16 +48,23 @@ public class TaintUsageFinder {
         Profiler profiler = Profiler.getInstance();
         profiler.start(this.getClass());
 
-        returnLocations = new ArrayList<Location>();        
+        returnLocations = new ArrayList<Location>();
         try {
             // Get the TaintDataflow for the method from the ClassContext
             // ... and run analysis
-            taintDataflow = getMethodAnalysis(TaintDataflow.class, method);
             typeDataflow = classContext.getTypeDataflow(method);
+            taintDataflow = getMethodAnalysis(TaintDataflow.class, method);
             checkAndSetDatabases();
 
             examineBasicBlocks();
             saveResultToDatabase();
+
+            if (DEBUG_DUMP_DATAFLOW) {
+                String path = DebugUtil.printDataflow(taintDataflow,
+                        "ti_" + classContext.getJavaClass().getClassName() + "_" + method.getName());
+                System.out.println("Dataflow of " + method + " dumped to " + path);
+            }
+
         } catch (DataflowAnalysisException e) {
             AnalysisContext.logError("Error while getting taint analysis dataflow in " +
                     method.getName(), e);
@@ -110,13 +117,12 @@ public class TaintUsageFinder {
     private void checkInvocation(BasicBlock basicBlock, InstructionHandle handle) throws DataflowAnalysisException, ClassNotFoundException {
         Location location = new Location(handle, basicBlock);
         TypeFrame typeFrame = typeDataflow.getFactAtLocation(location);
-        Set<JavaClassAndMethod> targetMethodSet = Hierarchy
-                .resolveMethodCallTargets((InvokeInstruction) handle.getInstruction(), typeFrame, classContext.getConstantPoolGen());
+        InvokeInstruction invokeInstruction = (InvokeInstruction) handle.getInstruction();
+        ConstantPoolGen cpg = classContext.getConstantPoolGen();
 
-        for (JavaClassAndMethod classAndMethod : targetMethodSet) {
-            XMethod calledMethod = XFactory.createXMethod(classAndMethod);
-            checkCollisionWithSensitiveSink(location, calledMethod);
-//            saveTaintedParametersToDatabase(location, calledMethod);
+        Collection<XMethod> calledMethods = HierarchyUtil.getResolvedMethods(typeFrame, invokeInstruction, cpg);
+        for (XMethod xm : calledMethods) {
+            checkCollisionWithSensitiveSink(location, xm);
         }
     }
 
@@ -124,85 +130,42 @@ public class TaintUsageFinder {
         TaintValueFrame fact = taintDataflow.getFactAtLocation(location);
         ParameterTaintnessProperty property =
                 parameterTaintnessPropertyDatabase.getProperty(calledMethod.getMethodDescriptor());
-        int numParams = calledMethod.getNumParams();
-        for (int i = 0; i < numParams; ++i) {
-            TaintValue value = fact.getStackValue(numParams - 1 - i);
-            if (value.getKind() == TaintValue.TAINTED && property.isUntaint(i)) {
-                collector.foundTaintSensitiveParameter(classContext, location, value);
+        if (property != null) {
+            int numParams = calledMethod.getNumParams();
+            for (int i = 0; i < numParams; ++i) {
+                TaintValue value = fact.getStackValue(numParams - 1 - i);
+                if (value.getKind() == TaintValue.TAINTED && property.isUntaint(i)) {
+                    collector.foundTaintSensitiveParameter(classContext, location, value, property.getSinkSourceLine());
+                }
             }
         }
-
-/*
-        for (int i = 0; i < calledMethod.getNumParams(); ++i) {
-            XMethodParameter param = new XMethodParameter(calledMethod, i);
-            TaintedAnnotation annotation = taintAnnotationDatabase.getResolvedAnnotation(param, false);
-            TaintValue value = fact.getStackValue(i);
-            if (annotation != null && annotation.equals(TaintedAnnotation.NEVER_TAINTED)
-                    && value.getKind() == TaintValue.TAINTED) {
-                // found it!
-                collector.foundTaintSensitiveParameter(classContext, location, value);
-            }
-        }
-*/
-    }
-
-    private TaintValue getResultFromAnnotation() {
-        TaintedAnnotation annotation;
-        TaintValue value;
-        try {
-            TaintAnnotationDatabase database = Global.getAnalysisCache().getDatabase(TaintAnnotationDatabase.class);
-            XMethod xm = XFactory.createXMethod(classContext.getJavaClass(), method);
-            annotation = database.getResolvedAnnotation(xm, false);
-        } catch (CheckedAnalysisException e) {
-            throw new RuntimeException("Error getting TaintAnnotationDatabase");
-        }
-
-        if (annotation != null) {
-            if (TaintAnalysis.DEBUG) {
-                System.out.println("Method " + method + " returns tainted data");
-            }
-            value = new TaintValue(TaintValue.TAINTED, 0);
-        } else {
-            value = new TaintValue(TaintValue.UNTAINTED);
-        }
-
-        return value;
     }
 
     private void saveResultToDatabase() throws DataflowAnalysisException {
         if (method.getReturnType() != Type.VOID) {
             // get previously saved (in examineBasicBlocks) return values and meet them
-            TaintValue result = getResultFromAnnotation();
+            XMethod xm = XFactory.createXMethod(classContext.getJavaClass(), method);
+            IsResultTaintedProperty prop = isResultTaintedPropertyDatabase.getProperty(xm.getMethodDescriptor());
+            if (prop == null) {
+                throw new IllegalArgumentException("Called method " + xm
+                        + " should be put to taintness database by MethodAnnotationDetector");
+            }
+
+            TaintValue result = prop.isTainted()
+                    ? new TaintValue(TaintValue.TAINTED)
+                    : new TaintValue(TaintValue.UNTAINTED);
+
             for (Location loc : returnLocations) {
                 TaintValueFrame fact = taintDataflow.getFactAtLocation(loc);
                 result.meetWith(fact.getTopValue());
             }
 
-            IsResultTaintedProperty prop = new IsResultTaintedProperty(result.getKind() == TaintValue.TAINTED);
-            XMethod xm = XFactory.createXMethod(classContext.getJavaClass(), method);
+            prop = new IsResultTaintedProperty(result.getKind() == TaintValue.TAINTED);
             isResultTaintedPropertyDatabase.setProperty(xm.getMethodDescriptor(), prop);
         }
     }
 
-    private void saveTaintedParametersToDatabase(Location location, XMethod calledMethod)
-            throws DataflowAnalysisException {
-        IsParameterTaintedProperty taintness = isParamTaintedPropertyDatabase.getProperty(calledMethod.getMethodDescriptor());
-        if (taintness == null) {
-            // nothing is tainted yet
-            taintness = new IsParameterTaintedProperty();
-        }
-
-        TaintValueFrame fact = taintDataflow.getFactAtLocation(location);
-        for (int i = 0; i < calledMethod.getNumParams(); ++i) {
-            TaintValue value = fact.getStackValue(i);
-            taintness.orUntaint(i, value.getKind() != TaintValue.TAINTED);
-        }
-
-        isParamTaintedPropertyDatabase.setProperty(calledMethod.getMethodDescriptor(), taintness);
-    }
-
     private void checkAndSetDatabases() throws CheckedAnalysisException {
-        isParamTaintedPropertyDatabase = Global.getAnalysisCache().getDatabase(IsParameterTaintedPropertyDatabase.class);
         isResultTaintedPropertyDatabase = Global.getAnalysisCache().getDatabase(IsResultTaintedPropertyDatabase.class);
         parameterTaintnessPropertyDatabase = Global.getAnalysisCache().getDatabase(ParameterTaintnessPropertyDatabase.class);
     }

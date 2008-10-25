@@ -12,8 +12,8 @@ import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.generic.MethodGen;
 import su.msu.cs.lvk.secbugs.bta.*;
+import su.msu.cs.lvk.secbugs.debug.DebugUtil;
 import su.msu.cs.lvk.secbugs.ta.TaintAnnotationDatabase;
-import su.msu.cs.lvk.secbugs.ta.TaintedAnnotation;
 
 import java.util.List;
 
@@ -22,10 +22,11 @@ import java.util.List;
  */
 public class TaintnessDetector implements Detector {
     public static final boolean DEBUG = SystemProperties.getBoolean("sec.ta.debug");
+    public static final boolean DEBUG_DUMP_DATAFLOW = SystemProperties.getBoolean("sec.ta.dump.dataflow");
+
     private BugReporter bugReporter;
     private ClassContext classContext;
     private ParameterTaintnessPropertyDatabase taintnessPropertyDatabase;
-    private TaintAnnotationDatabase taintAnnotationDatabase;
 
     public TaintnessDetector(BugReporter bugReporter) {
         this.bugReporter = bugReporter;
@@ -58,7 +59,6 @@ public class TaintnessDetector implements Detector {
                     System.out.println("Checking for taintness in " + currentMethod);
                 }
 
-                extractTaintnessFromAnnotation(method);
                 analyzeMethod(classContext, method);
             } catch (MissingClassException e) {
                 bugReporter.reportMissingClass(e.getClassNotFoundException());
@@ -73,27 +73,8 @@ public class TaintnessDetector implements Detector {
         }
     }
 
-    private void extractTaintnessFromAnnotation(Method method) {
-        XMethod xm = XFactory.createXMethod(classContext.getJavaClass(), method);
-        ParameterTaintnessProperty property = new ParameterTaintnessProperty();
-        for (int i = 0; i < xm.getNumParams(); ++i) {
-            XMethodParameter param = new XMethodParameter(xm, i);
-            TaintedAnnotation annotation = taintAnnotationDatabase.getResolvedAnnotation(param, false);
-            if (annotation != null && annotation.equals(TaintedAnnotation.NEVER_TAINTED)) {
-                property.setUntaint(i, true);
-            } else {
-                property.setTaint(i, true);
-            }
-        }
-
-        if (taintnessPropertyDatabase.getProperty(xm.getMethodDescriptor()) == null) {
-            taintnessPropertyDatabase.setProperty(xm.getMethodDescriptor(), property);
-        }
-    }
-
     private void checkAndSetDatabases() throws CheckedAnalysisException {
         taintnessPropertyDatabase = Global.getAnalysisCache().getDatabase(ParameterTaintnessPropertyDatabase.class);
-        taintAnnotationDatabase = Global.getAnalysisCache().getDatabase(TaintAnnotationDatabase.class);
     }
 
     private void analyzeMethod(ClassContext classContext, Method method)
@@ -114,10 +95,21 @@ public class TaintnessDetector implements Detector {
 
         TaintnessDataflow dataflow = getMethodAnalysis(TaintnessDataflow.class, method);
         TaintnessFrame fact = dataflow.getResultFact(dataflow.getCFG().getEntry());
-//        TaintnessFrame fact = dataflow.getResultFact(dataflow.getCFG().getEntry());
 
-        // put taintness values of method parameters to property database
-        putTaintnessProperty(classContext, method, fact);
+        if (DEBUG_DUMP_DATAFLOW) {
+            String path = DebugUtil.printDataflow(dataflow,
+                    "ta_" + classContext.getJavaClass().getClassName() + "_" + method.getName());
+            System.out.println("Dataflow of " + method + " dumped to " + path);
+        }
+        try {
+            // put taintness values of method parameters to property database
+            putTaintnessProperty(classContext, method, fact);
+        } catch (IllegalStateException e) {
+            String path = DebugUtil.printDataflow(dataflow,
+                    classContext.getJavaClass().getClassName() + "_" + method.getName());
+            bugReporter.logError("Invalid fact met during taintness analysis of method " + method
+                    + " dataflow saved to: " + path);
+        }
     }
 
     private void putTaintnessProperty(ClassContext classContext, Method method, TaintnessFrame fact) {
@@ -128,11 +120,28 @@ public class TaintnessDetector implements Detector {
             TaintnessValue value = fact.getValue(shift + i);
             property.setTaint(i, value.getTainted());
             property.setUntaint(i, value.getUntainted());
+
+            if (value.getSinkSourceLine() != null && property.getSinkSourceLine() == null) {
+                property.setSinkSourceLine(value.getSinkSourceLine());
+            }
         }
 
         ParameterTaintnessProperty oldProp = taintnessPropertyDatabase.getProperty(xmethod.getMethodDescriptor());
         if (oldProp != null) {
             oldProp.mergeWith(property);
+        }
+
+        if (DEBUG) {
+            StringBuilder builder = new StringBuilder("Method ");
+            builder.append(method.getName());
+            builder.append(" taintness property: ");
+            for (int i = 0; i < xmethod.getNumParams(); ++i) {
+                TaintnessValue value = new TaintnessValue();
+                value.setTainted(property.isTaint(i));
+                value.setUntainted(property.isUntaint(i));
+                builder.append(value.toString());
+            }
+            System.out.println(builder.toString());
         }
         taintnessPropertyDatabase.setProperty(xmethod.getMethodDescriptor(), property);
     }

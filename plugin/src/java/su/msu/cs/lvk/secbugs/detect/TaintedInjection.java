@@ -1,20 +1,13 @@
 package su.msu.cs.lvk.secbugs.detect;
 
-import edu.umd.cs.findbugs.BugInstance;
-import edu.umd.cs.findbugs.BugReporter;
-import edu.umd.cs.findbugs.Detector;
-import edu.umd.cs.findbugs.SystemProperties;
-import edu.umd.cs.findbugs.classfile.CheckedAnalysisException;
-import edu.umd.cs.findbugs.classfile.Global;
+import edu.umd.cs.findbugs.*;
 import edu.umd.cs.findbugs.ba.*;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.generic.MethodGen;
-import su.msu.cs.lvk.secbugs.ta.TaintAnnotationDatabase;
 import su.msu.cs.lvk.secbugs.ta.TaintUsageCollector;
 import su.msu.cs.lvk.secbugs.ta.TaintUsageFinder;
 import su.msu.cs.lvk.secbugs.ta.TaintValue;
-import su.msu.cs.lvk.secbugs.bta.ParameterTaintnessPropertyDatabase;
 
 import java.util.List;
 
@@ -24,24 +17,13 @@ import java.util.List;
 public class TaintedInjection implements Detector, TaintUsageCollector {
     public static final boolean DEBUG = SystemProperties.getBoolean("ti.debug");
     private BugReporter bugReporter;
-    private ClassContext classContext;
     private Method method;
-    private TaintAnnotationDatabase taintAnnotationDatabase;
 
     public TaintedInjection(BugReporter bugReporter) {
         this.bugReporter = bugReporter;
     }
 
     public void visitClassContext(ClassContext classContext) {
-        this.classContext = classContext;
-
-        try {
-            checkAndSetDatabases();
-        } catch (CheckedAnalysisException e) {
-            bugReporter.logError("While analyzing " + classContext.getClassDescriptor().getClassName()
-                    + ": we caught cae exception", e);
-        }
-
         String currentMethod = null;
 
         JavaClass jclass = classContext.getJavaClass();
@@ -83,16 +65,6 @@ public class TaintedInjection implements Detector, TaintUsageCollector {
         if (methodGen == null) {
             return;
         }
-
-        /*
-        if (!checkedDatabases) {
-            checkDatabases();
-            checkedDatabases = true;
-        }
-        */
-
-        // UsagesRequiringNonNullValues uses =
-        // classContext.getUsagesRequiringNonNullValues(method);
         this.method = method;
 
         if (DEBUG) {
@@ -111,15 +83,21 @@ public class TaintedInjection implements Detector, TaintUsageCollector {
     public void report() {
     }
 
-    public void foundTaintSensitiveParameter(ClassContext classContext, Location location, TaintValue taintValue) {
-        BugInstance bug = new BugInstance(this, "TI_TAINTED_INJECTION", Detector.NORMAL_PRIORITY);
+    public void foundTaintSensitiveParameter(ClassContext classContext, Location location,
+                                             TaintValue taintValue, SourceLineAnnotation sinkSourceLine) {
+        int prio = (taintValue.getDepth() == 0) ? Detector.NORMAL_PRIORITY : Detector.LOW_PRIORITY;
+
+        BugInstance bug = new BugInstance(this, "TI_TAINTED_INJECTION", prio);
         bug.addClassAndMethod(classContext.getJavaClass(), method);
         bug.addSourceLine(classContext, method, location).describe("TAINTED_PARAMETER");
+        if (taintValue.getSourceLineAnnotation() != null) {
+            bug.add(taintValue.getSourceLineAnnotation()).describe("SOURCE_LINE_VALUE_SOURCE");
+        }
+
+        if (sinkSourceLine != null) {
+            bug.add(sinkSourceLine).describe("SOURCE_LINE_VALUE_SINK");
+        }
+        
         bugReporter.reportBug(bug);
     }
-
-    private void checkAndSetDatabases() throws CheckedAnalysisException {
-        taintAnnotationDatabase = Global.getAnalysisCache().getDatabase(TaintAnnotationDatabase.class);
-    }
-
 }

@@ -1,10 +1,10 @@
 package su.msu.cs.lvk.secbugs.bta;
 
+import edu.umd.cs.findbugs.SystemProperties;
 import edu.umd.cs.findbugs.ba.DataflowAnalysisException;
 import edu.umd.cs.findbugs.ba.Frame;
 import edu.umd.cs.findbugs.ba.InvalidBytecodeException;
 import edu.umd.cs.findbugs.ba.Location;
-import edu.umd.cs.findbugs.SystemProperties;
 import org.apache.bcel.Constants;
 import org.apache.bcel.generic.*;
 
@@ -1122,5 +1122,4 @@ public abstract class AbstractBackwardFrameModelingVisitor<Value, FrameType exte
     public void visitFADD(FADD obj) {
         handleNormalInstruction(obj);
     }
-
 }
