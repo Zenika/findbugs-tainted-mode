@@ -32,6 +32,7 @@
     <path id="test.classpath">
         <path refid="lib.classpath"/>
         <pathelement location="${annotations.build.dir}"/>
+	<pathelement location="${plugin.build.dir}"/>
     </path>
 
     <target name="init">
