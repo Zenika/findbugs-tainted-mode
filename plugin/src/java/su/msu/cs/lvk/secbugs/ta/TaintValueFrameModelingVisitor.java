@@ -108,27 +108,23 @@ public class TaintValueFrameModelingVisitor extends AbstractFrameModelingVisitor
         TaintValue pushValue = new TaintValue(TaintValue.UNTAINTED);
 
         IsResultTaintedProperty property;
-        try {
-            IsResultTaintedPropertyDatabase database = Global.getAnalysisCache().getDatabase(IsResultTaintedPropertyDatabase.class);
-            for (XMethod targetMethod : calledMethods) {
-                property = database.getProperty(targetMethod.getMethodDescriptor());
+        IsResultTaintedPropertyDatabase database = Global.getAnalysisCache().getDatabase(IsResultTaintedPropertyDatabase.class);
+        for (XMethod targetMethod : calledMethods) {
+   	    property = database.getProperty(targetMethod.getMethodDescriptor());
 
-                if (property != null) {
-                    if (property.isTainted()) {
-                        if (TaintAnalysis.DEBUG) {
-                            System.out.println("Method " + calledMethod + " returns tainted data");
-                        }
-                        pushValue = new TaintValue(TaintValue.TAINTED, 0);
-                        SourceLineAnnotation source = SourceLineAnnotation
-                                .fromVisitedInstruction(javaClassAndMethod.toMethodDescriptor(), getLocation());
-                        pushValue.setSourceLineAnnotation(source);
-                    }
-                } else {
-                    throw new RuntimeException("Property must be set by MethodAnnotationDetector");
-                }
-            }
-        } catch (CheckedAnalysisException e) {
-            throw new RuntimeException("Error getting TaintAnnotationDatabase");
+	    if (property != null) {
+	       if (property.isTainted()) {
+	   	   if (TaintAnalysis.DEBUG) {
+		       System.out.println("Method " + calledMethod + " returns tainted data");
+		   }
+		   pushValue = new TaintValue(TaintValue.TAINTED, 0);
+		   SourceLineAnnotation source = SourceLineAnnotation
+			.fromVisitedInstruction(javaClassAndMethod.toMethodDescriptor(), getLocation());
+		   pushValue.setSourceLineAnnotation(source);
+	       }
+	    } else {
+	       throw new RuntimeException("Property must be set by MethodAnnotationDetector");
+	    }
         }
 
         meetWithThis(calledMethod, pushValue);
