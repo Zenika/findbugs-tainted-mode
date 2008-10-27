@@ -13,6 +13,7 @@
 
     <property name="annotations.src.dir" location="annotations/src"/>
     <property name="annotations.build.dir" location="${build.dir}/annotations"/>
+    <property name="annotations.jar.name" location="${dist.dir}/secbugs_annotations.jar"/>
 
     <property name="test.cases.src.dir" location="tests/cases/src/cases"/>
     <property name="test.cases.build.dir" location="${build.dir}/tests/cases"/>
@@ -32,7 +33,7 @@
     <path id="test.classpath">
         <path refid="lib.classpath"/>
         <pathelement location="${annotations.build.dir}"/>
-	<pathelement location="${plugin.build.dir}"/>
+        <pathelement location="${plugin.build.dir}"/>
     </path>
 
     <target name="init">
@@ -67,9 +68,10 @@
         <mkdir dir="${dist.dir}/lib"/>
 
         <jar jarfile="${plugin.jar.name}" basedir="${plugin.build.dir}"/>
+        <jar jarfile="${annotations.jar.name}" basedir="${annotations.build.dir}"/>
     </target>
 
-    <target name="run-tests" depends="deploy-to-findbugs" description="run unit-tests" >
+    <target name="run-tests" depends="deploy-to-findbugs">
         <path id="aux.classpath">
             <pathelement location="${annotations.build.dir}"/>
         </path>
@@ -91,6 +93,7 @@
                 <pathelement location="${annotations.build.dir}"/>
                 <pathelement location="${test.cases.build.dir}"/>
                 <pathelement location="${test.junit.build.dir}"/>
+                <pathelement location="${plugin.build.dir}"/>
 
                 <path refid="lib.classpath"/>
             </classpath>
@@ -106,7 +109,7 @@
         </junit>
     </target>
 
-    <target name="debug-run-test" depends="deploy-to-findbugs" description="run unit-tests in debug mode">
+    <target name="debug-run-test" depends="deploy-to-findbugs">
         <path id="aux.classpath">
             <pathelement location="${annotations.build.dir}"/>
         </path>
