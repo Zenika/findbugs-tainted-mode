@@ -1,0 +1,127 @@
+<MessageCollection>
+  <Detector class="su.msu.cs.lvk.secbugs.detect.MethodAnnotationDetector" >
+    <Details>
+      <![CDATA[
+        <p> This detector searches for vulnerability sources, sinks, and validation methods.
+      ]]>
+    </Details>
+  </Detector>
+
+  <Detector class="su.msu.cs.lvk.secbugs.detect.TaintedInjection" >
+    <Details>
+      <![CDATA[
+        <p> This detector looks for a flow of tainted data from methods marked as @TaintedResult
+        to the methods, which parameters are marked as @SensitiveParameters.
+         Because it performs dataflow analysis, it is fairly slow.
+      ]]>
+    </Details>
+  </Detector>
+
+  <Detector class="su.msu.cs.lvk.secbugs.detect.TaintnessDetector" >
+    <Details>
+      <![CDATA[
+        <p> This detector builds a flow of sensitive annotations backwardly
+         and sets constraints on parameter values.
+      ]]>
+    </Details>
+  </Detector>
+
+  <BugPattern type="TI_TAINTED_INJECTION">
+    <ShortDescription>Tainted data reaches sensitive sink</ShortDescription>
+
+    <LongDescription>{1}</LongDescription>
+
+    <Details>
+      <![CDATA[
+        <p> Tainted data reaches sensitive sink. This kind of defect may indicate some kind
+        of vulnerability.
+      ]]>
+    </Details>
+  </BugPattern>
+
+  <BugPattern type="TI_DANGEROUS_POINT">
+    <ShortDescription>Potentially dangerous point in you program</ShortDescription>
+
+    <LongDescription>{1}</LongDescription>
+
+    <Details>
+      <![CDATA[
+        <p> This point is a tainted source, sink, or validation point.
+      ]]>
+    </Details>
+  </BugPattern>
+
+  <BugPattern type="TI_DANGEROUS_CALL">
+    <ShortDescription>Potentially dangerous call</ShortDescription>
+
+    <LongDescription>{1}</LongDescription>
+
+    <Details>
+      <![CDATA[
+        <p> Call to a sensitive sink or tainted data source.
+      ]]>
+    </Details>
+  </BugPattern>
+
+  <BugPattern type="TI_KEY_INDICATOR">
+    <ShortDescription>Security key indicator</ShortDescription>
+
+    <LongDescription>{1}</LongDescription>
+
+    <Details>
+      <![CDATA[
+        <p> Security key indicator.
+      ]]>
+    </Details>
+  </BugPattern>
+
+  <BugPattern type="TI_CALL_SENSITIVE_SINK">
+    <ShortDescription>Potentially dangerous call of method sensitive to tainted data</ShortDescription>
+
+    <LongDescription>{1}</LongDescription>
+
+    <Details>
+      <![CDATA[
+        <p> Potentially dangerous call of method sensitive to tainted data
+      ]]>
+    </Details>
+  </BugPattern>
+
+  <BugPattern type="TI_CALL_TAINTED_SOURCE">
+    <ShortDescription>Potentially dangerous call of method returning (potentially) tainted data</ShortDescription>
+
+    <LongDescription>{1}</LongDescription>
+
+    <Details>
+      <![CDATA[
+        <p> Potentially dangerous call of method returning (potentially) tainted data
+      ]]>
+    </Details>
+  </BugPattern>
+
+  <BugPattern type="TI_CALL_KEY_INDICATOR">
+    <ShortDescription>The location, where key indicator (validator or access control method) is called</ShortDescription>
+
+    <LongDescription>{1}</LongDescription>
+
+    <Details>
+      <![CDATA[
+        <p> The location, where key indicator (validator or access control method) is called
+      ]]>
+    </Details>
+  </BugPattern>
+
+  <BugCode abbrev="TI">Tainted Injection</BugCode>
+
+  <BugCode abbrev="TIDP">Dangerous point</BugCode>
+
+  <BugCode abbrev="TIDC">Dangerous call</BugCode>
+
+  <BugCode abbrev="TIKI">Key indicator</BugCode>
+
+  <BugCode abbrev="TICSS">Call to sensitive sink</BugCode>
+
+  <BugCode abbrev="TICTS">Call to tainted source</BugCode>
+
+  <BugCode abbrev="TICKI">Call to key indicator</BugCode>
+</MessageCollection>
