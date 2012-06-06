@@ -125,9 +125,9 @@ public class TaintnessFrameModelingVisitor extends AbstractBackwardFrameModeling
             for (int i = 0; i < calledMethod.getNumParams(); ++i) {
                 TaintnessValue v = values.get(shift + i);
                 // all validator parameters may be tainted
-                v.setTainted(true);
+               v.setTainted(true);
                 v.setUntainted(false);
-            }
+            } 
         }
     }
 

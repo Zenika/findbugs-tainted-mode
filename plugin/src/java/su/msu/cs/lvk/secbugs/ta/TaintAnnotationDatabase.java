@@ -27,7 +27,9 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
     /**
      * Filename of database, where annotations are stored externally.
      */
-    public static final String DATABASE_FILENAME = ".secbugs_annotations";
+    public static final String EXTERNAL_DATABASE_FILENAME = ".secbugs_annotations";
+    
+    public static final String DEFAULT_DATABASE_FILENAME = "defaultAnnotations.db";
 
     private static final boolean DEBUG = SystemProperties.getBoolean("secbugs.ta.debug");
 
@@ -44,8 +46,9 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
         ClassDescriptor sensitiveClassDesc = DescriptorFactory.instance().getClassDescriptor(SENSITIVE_PARAM_ANNOTATION);
         sensitiveParamTypeQualifierValue = TypeQualifierValue.getValue(sensitiveClassDesc, null);
         
-        addDefaultTaintAnnotations();
-        readDatabaseIfPresent();
+        //addDefaultTaintAnnotations();
+        readDefaultAnnotationsDatabase();
+        //readDatabaseIfPresent();
     }
 
     /* (non-Javadoc)
@@ -63,7 +66,7 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
 
             if (o instanceof XMethodParameter) {
                 XMethodParameter param = (XMethodParameter) o;
-                System.out.println("tad "+param.getMethod().getName()+" : "+ param.getMethod().getParameterAnnotations(param.getParameterNumber()).toString());
+                //System.out.println("tad "+param.getMethod().getName()+" : "+ param.getMethod().getParameterAnnotations(param.getParameterNumber()).toString());
                 //TODO doesn't work
                 tqa = TypeQualifierApplications.getEffectiveTypeQualifierAnnotation(
                         param.getMethod(), param.getParameterNumber(), sensitiveParamTypeQualifierValue);
@@ -206,18 +209,18 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
         return TaintedAnnotation.ALWAYS_TAINTED;
     }
     
+    /*
     private void addDefaultTaintAnnotations(){
 
     	addMethodAnnotation("javax.servlet.ServletRequest", "getParameter", "(Ljava/lang/String;)Ljava/lang/String;", false,
                 new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(TAINTED_RESULT_ANNOTATION)));
+    	
     	addMethodAnnotation("javax.servlet.ServletRequest", "getParameterValues", "(Ljava/lang/String;)[Ljava/lang/String;", false,
                 new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(TAINTED_RESULT_ANNOTATION)));
+    	
     	addMethodAnnotation("java.sql.ResultSet", "getString", "(I)Ljava/lang/String;", false,
                 new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(TAINTED_RESULT_ANNOTATION)));
-    	/*
-    	addMethodAnnotation("java.util.Scanner", "<init>", "(java/io/InputStream;)V;", false,
-                new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(TAINTED_RESULT_ANNOTATION)));
-    	*/
+    	
     	addMethodAnnotation("java.util.Scanner", "next", "()Ljava/lang/String;", false,
                 new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(TAINTED_RESULT_ANNOTATION)));
     	addMethodAnnotation("java.util.Scanner", "nextLine", "()Ljava/lang/String;", false,
@@ -235,10 +238,39 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
                 new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(SENSITIVE_PARAM_ANNOTATION)));
         
     	
+    }*/
+    
+    private void readDefaultAnnotationsDatabase(){
+    	String file = DEFAULT_DATABASE_FILENAME;
+    	InputStream in = this.getClass().getResourceAsStream(DEFAULT_DATABASE_FILENAME);
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(in));
+            String line = reader.readLine();
+            while (line != null) {
+                parseLine(line);
+                line = reader.readLine();
+            }
+        } catch (FileNotFoundException e) {
+            if (DEBUG) {
+                System.out.println("TaintedAnnotationDatabase file " + file + " not found");
+            }
+        } catch (IOException e) {
+            System.err.println("Exception while reading TaintedAnnotationDatabase file: " + file);
+            e.printStackTrace(System.err);
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+        }
     }
 
     private void readDatabaseIfPresent() {
-        File file = new File(FindBugs.getHome(), DATABASE_FILENAME);
+        File file = new File(FindBugs.getHome(), EXTERNAL_DATABASE_FILENAME);
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new FileReader(file));

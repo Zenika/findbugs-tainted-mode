@@ -23,6 +23,10 @@
     <property name="lib.dir" location="lib"/>
 
     <property file="build.properties"/>
+	
+	<patternset id="database.pats">
+	    <include name="**/*.db"/>
+	</patternset>
 
     <path id="lib.classpath">
         <fileset dir="${lib.dir}">
@@ -61,7 +65,13 @@
             <fileset dir="${plugin.src.dir}/findbugs">
                 <include name="*.xml"/>
             </fileset>
+        	
+        	<fileset dir="${plugin.src.dir}/java">
+        	    <patternset refid="database.pats"/>
+        	</fileset>
         </copy>
+    	
+    	
     	<!-- <copy file="secbugs_annotations" todir="${plugin.build.dir}"/> -->
     </target>
 

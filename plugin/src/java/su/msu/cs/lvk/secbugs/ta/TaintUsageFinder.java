@@ -128,12 +128,15 @@ public class TaintUsageFinder {
 
     private void checkCollisionWithSensitiveSink(Location location, XMethod calledMethod) throws DataflowAnalysisException {
         TaintValueFrame fact = taintDataflow.getFactAtLocation(location);
+        System.out.println("method "+ calledMethod.getName());
+        System.out.println("fact "+fact.toString());
         ParameterTaintnessProperty property =
                 parameterTaintnessPropertyDatabase.getProperty(calledMethod.getMethodDescriptor());
         if (property != null) {
             int numParams = calledMethod.getNumParams();
             for (int i = 0; i < numParams; ++i) {
                 TaintValue value = fact.getStackValue(numParams - 1 - i);
+                System.out.println(value);
                 if (value.getKind() == TaintValue.TAINTED && property.isUntaint(i)) {
                     collector.foundTaintSensitiveParameter(classContext, location, value, property.getSinkSourceLine());
                 }

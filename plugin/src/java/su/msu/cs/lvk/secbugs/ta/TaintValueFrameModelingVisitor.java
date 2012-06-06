@@ -9,6 +9,7 @@ import edu.umd.cs.findbugs.classfile.CheckedAnalysisException;
 import edu.umd.cs.findbugs.classfile.Global;
 import org.apache.bcel.Constants;
 import org.apache.bcel.generic.*;
+
 import su.msu.cs.lvk.secbugs.util.HierarchyUtil;
 
 import java.util.Collection;
@@ -40,6 +41,15 @@ public class TaintValueFrameModelingVisitor extends AbstractFrameModelingVisitor
 
     public void visitINVOKEINTERFACE(INVOKEINTERFACE obj) {
         handleInvoke(obj);
+    }
+    
+    public void visitAALOAD(AALOAD obj) {
+    	//TODO
+    	/*
+    	 * check if the reference array is tainted
+    	 */
+    	
+    	
     }
 
     public void handleLoadInstruction(LoadInstruction obj) {

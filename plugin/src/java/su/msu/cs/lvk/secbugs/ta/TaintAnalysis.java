@@ -14,7 +14,7 @@ import su.msu.cs.lvk.secbugs.ma.KeyIndicatorPropertyDatabase;
  * @author Igor Konnov
  */
 public class TaintAnalysis extends FrameDataflowAnalysis<TaintValue, TaintValueFrame> {
-    static final boolean DEBUG = SystemProperties.getBoolean("ta.debug");
+    static final boolean DEBUG = true; //SystemProperties.getBoolean("ta.debug");
 
     static {
         if (DEBUG) {
