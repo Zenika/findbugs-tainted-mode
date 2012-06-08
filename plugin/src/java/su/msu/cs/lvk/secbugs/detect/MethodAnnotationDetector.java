@@ -34,7 +34,7 @@ import java.util.Iterator;
  * @author Igor Konnov
  */
 public class MethodAnnotationDetector extends CFGDetector {
-    public static final boolean DEBUG = true;//SystemProperties.getBoolean("secbugs.mad.debug");
+    public static final boolean DEBUG = SystemProperties.getBoolean("secbugs.mad.debug");
 
     private TaintAnnotationDatabase taintAnnotationDatabase;
     private KeyIndicatorAnnotationDatabase keyIndicatorAnnotationDatabase;

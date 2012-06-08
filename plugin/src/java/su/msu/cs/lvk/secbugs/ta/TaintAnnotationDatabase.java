@@ -13,6 +13,7 @@ import edu.umd.cs.findbugs.classfile.Global;
 import edu.umd.cs.findbugs.classfile.analysis.AnnotatedObject;
 import edu.umd.cs.findbugs.classfile.analysis.AnnotationValue;
 import edu.umd.cs.findbugs.classfile.analysis.ClassInfo;
+import edu.umd.cs.findbugs.classfile.analysis.FieldInfo;
 import edu.umd.cs.findbugs.classfile.analysis.MethodInfo;
 import edu.umd.cs.findbugs.log.Profiler;
 
@@ -46,7 +47,6 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
         ClassDescriptor sensitiveClassDesc = DescriptorFactory.instance().getClassDescriptor(SENSITIVE_PARAM_ANNOTATION);
         sensitiveParamTypeQualifierValue = TypeQualifierValue.getValue(sensitiveClassDesc, null);
         
-        //addDefaultTaintAnnotations();
         readDefaultAnnotationsDatabase();
         //readDatabaseIfPresent();
     }
@@ -66,8 +66,6 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
 
             if (o instanceof XMethodParameter) {
                 XMethodParameter param = (XMethodParameter) o;
-                //System.out.println("tad "+param.getMethod().getName()+" : "+ param.getMethod().getParameterAnnotations(param.getParameterNumber()).toString());
-                //TODO doesn't work
                 tqa = TypeQualifierApplications.getEffectiveTypeQualifierAnnotation(
                         param.getMethod(), param.getParameterNumber(), sensitiveParamTypeQualifierValue);
             } else if (o instanceof XMethod || o instanceof XField) {
@@ -84,31 +82,6 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
             profiler.end(this.getClass());
         }
     }
-
-    /*
-    public void addFieldAnnotation(String cName, String mName, String mSig, boolean isStatic, TaintedAnnotation annotation) {
-        if (DEBUG) {
-            System.out.println("addFieldAnnotation: annotate " + cName + "." + mName + " with " + annotation);
-        }
-
-        XField xfield = XFactory.createXField(cName, mName, mSig, isStatic);
-        if (!(xfield instanceof FieldInfo)) {
-            if (DEBUG) {
-                System.out.println("  Field not found! " + cName + "." + mName + ":" + mSig + " " + isStatic + " " + annotation);
-            }
-            return;
-        }
-
-        // Get JSR-305 nullness annotation type
-        ClassDescriptor nullnessAnnotationType = getNullnessAnnotationClassDescriptor(annotation);
-
-        // Create an AnnotationValue
-        AnnotationValue annotationValue = new AnnotationValue(nullnessAnnotationType);
-
-        // Destructively add the annotation to the FieldInfo object
-        ((FieldInfo) xfield).addAnnotation(annotationValue);
-    }
-    */
 
     public XMethod getXMethod(String cName, String mName, String sig, boolean isStatic) {
         ClassDescriptor classDesc = DescriptorFactory.instance().getClassDescriptorForDottedClassName(cName);
@@ -185,6 +158,27 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
         // Destructively add the annotation to the MethodInfo object
         ((MethodInfo) xmethod).addParameterAnnotation(param, annotationValue);
     }
+    
+    
+    public void addFieldAnnotation(String cName, String fName, String fSig, boolean isStatic, TaintedAnnotation annotation) {
+        if (DEBUG) {
+            System.out.println("addFieldAnnotation: annotate " + cName + "." + fName + " with " + annotation);
+        }
+
+        XField xfield = XFactory.createXField(cName, fName, fSig, isStatic);
+        if (!(xfield instanceof FieldInfo)) {
+            if (DEBUG) {
+                System.out.println("  Field not found! " + cName + "." + fName + ":" + fSig + " " + isStatic + " " + annotation);
+            }
+            return;
+        }
+
+        AnnotationValue annotationValue = new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(TAINTED_RESULT_ANNOTATION));
+
+        // Destructively add the annotation to the FieldInfo object
+        ((FieldInfo) xfield).addAnnotation(annotationValue);
+    }
+    
 
     /**
      * Convert a TaintedResult-based TypeQualifierAnnotation
@@ -211,6 +205,8 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
     
     /*
     private void addDefaultTaintAnnotations(){
+
+		//add field annotation for System.in
 
     	addMethodAnnotation("javax.servlet.ServletRequest", "getParameter", "(Ljava/lang/String;)Ljava/lang/String;", false,
                 new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(TAINTED_RESULT_ANNOTATION)));

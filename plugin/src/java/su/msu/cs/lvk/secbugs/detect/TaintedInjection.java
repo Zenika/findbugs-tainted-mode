@@ -15,7 +15,7 @@ import java.util.List;
  * @author Igor Konnov
  */
 public class TaintedInjection implements Detector, TaintUsageCollector {
-    public static final boolean DEBUG = true;//SystemProperties.getBoolean("ti.debug");
+    public static final boolean DEBUG = SystemProperties.getBoolean("ti.debug");
     private BugReporter bugReporter;
     private Method method;
 

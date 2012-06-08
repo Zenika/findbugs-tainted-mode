@@ -21,7 +21,7 @@ import java.util.List;
  * @author Igor Konnov
  */
 public class TaintnessDetector implements Detector {
-    public static final boolean DEBUG = true;//SystemProperties.getBoolean("sec.ta.debug");
+    public static final boolean DEBUG = SystemProperties.getBoolean("sec.ta.debug");
     public static final boolean DEBUG_DUMP_DATAFLOW = SystemProperties.getBoolean("sec.ta.dump.dataflow");
 
     private BugReporter bugReporter;
