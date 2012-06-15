@@ -29,7 +29,7 @@
   <BugPattern type="TI_TAINTED_INJECTION">
     <ShortDescription>Tainted data reaches sensitive sink</ShortDescription>
 
-    <LongDescription>{1}</LongDescription>
+    <LongDescription>Potentially dangerous data injected in {1}</LongDescription>
 
     <Details>
       <![CDATA[

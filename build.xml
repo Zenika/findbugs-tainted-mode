@@ -71,8 +71,6 @@
         	</fileset>
         </copy>
     	
-    	
-    	<!-- <copy file="secbugs_annotations" todir="${plugin.build.dir}"/> -->
     </target>
 
     <target name="dist" depends="compile" description="generate the distribution">

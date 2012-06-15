@@ -7,6 +7,7 @@ import edu.umd.cs.findbugs.ba.type.TypeFrame;
 import edu.umd.cs.findbugs.classfile.CheckedAnalysisException;
 import edu.umd.cs.findbugs.classfile.Global;
 import org.apache.bcel.generic.*;
+
 import su.msu.cs.lvk.secbugs.ma.KeyIndicatorProperty;
 import su.msu.cs.lvk.secbugs.ma.KeyIndicatorPropertyDatabase;
 import su.msu.cs.lvk.secbugs.util.HierarchyUtil;
@@ -44,6 +45,10 @@ public class TaintnessFrameModelingVisitor extends AbstractBackwardFrameModeling
 
     public void visitINVOKEINTERFACE(INVOKEINTERFACE obj) {
         handleInvoke(obj);
+    }
+    
+    public void visitINVOKESPECIAL(INVOKESPECIAL obj){
+    	handleInvoke(obj);
     }
 
     /**

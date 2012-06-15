@@ -43,6 +43,10 @@ public class TaintValueFrameModelingVisitor extends AbstractFrameModelingVisitor
         handleInvoke(obj);
     }
     
+    public void visitINVOKESPECIAL(INVOKESPECIAL obj){
+    	handleInvoke(obj);
+    }
+    
     public void visitAALOAD(AALOAD obj) {
     	/*
     	 * check if the reference array is tainted

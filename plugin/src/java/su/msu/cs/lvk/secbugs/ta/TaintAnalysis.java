@@ -54,7 +54,7 @@ public class TaintAnalysis extends FrameDataflowAnalysis<TaintValue, TaintValueF
 
             int numLocals = methodGen.getMaxLocals();
             boolean instanceMethod = !methodGen.isStatic();
-
+            
             int paramShift = instanceMethod ? 1 : 0;
             for (int i = 0; i < numLocals; ++i) {
                 cachedEntryFact.setValue(i, new TaintValue(TaintValue.UNTAINTED));
@@ -62,7 +62,7 @@ public class TaintAnalysis extends FrameDataflowAnalysis<TaintValue, TaintValueF
             if (paramShift == 1) {
                 cachedEntryFact.setValue(0, new TaintValue(TaintValue.UNTAINTED));
             }
-
+            
             Type[] argumentTypes = methodGen.getArgumentTypes();
             int slot = paramShift;
             for (Type argumentType : argumentTypes) {
@@ -70,6 +70,13 @@ public class TaintAnalysis extends FrameDataflowAnalysis<TaintValue, TaintValueF
 
                 slot += argumentType.getSize();
             }
+            
+            //test if method is main and mark arguments as tainted
+            boolean isMainMethod = methodGen.isStatic() && methodGen.getName().equals("main") && methodGen.getSignature().equals("([Ljava/lang/String;)V");
+            if(isMainMethod){
+            	cachedEntryFact.setValue(0, new TaintValue(TaintValue.TAINTED,0));
+            }
+
         }
         copy(cachedEntryFact, result);
     }
