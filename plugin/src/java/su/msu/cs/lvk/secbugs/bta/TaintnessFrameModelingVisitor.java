@@ -14,6 +14,7 @@ import su.msu.cs.lvk.secbugs.util.HierarchyUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -65,12 +66,26 @@ public class TaintnessFrameModelingVisitor extends AbstractBackwardFrameModeling
 
         int shift = calledMethod.isStatic() ? 0 : 1;
         List<TaintnessValue> pushValues = new ArrayList<TaintnessValue>();
-
-        for (int i = 0; i < calledMethod.getNumParams() + shift; ++i) {
-            TaintnessValue value = new TaintnessValue();
+        //handle long and double types
+        SignatureParser sigParser = new SignatureParser(calledMethod.getSignature());
+        Iterator<String> parameterIterator = sigParser.parameterSignatureIterator();
+        String paramSig;
+        for (int i = 0; i < calledMethod.getNumParams() + shift; ++i) {        	
+        	TaintnessValue value = new TaintnessValue();
             value.setTainted(true);
             value.setUntainted(false);
             pushValues.add(value);
+            
+            if(i==0 && !calledMethod.isStatic()){
+            	continue;//first value on stack for non static method : this
+            }
+            if(parameterIterator.hasNext()){
+            	paramSig = parameterIterator.next();
+	        	if (paramSig.equals("D") || paramSig.equals("J")){
+	        		pushValues.add(value); //for long and double types : 2 slots -> 2 values
+	        	}
+            }
+            
         }
 
         TypeDataflow typeDataflow;
@@ -103,11 +118,17 @@ public class TaintnessFrameModelingVisitor extends AbstractBackwardFrameModeling
     private void checkSensitiveParameters(XMethod calledMethod, List<TaintnessValue> values, int shift) {
         ParameterTaintnessProperty prop = parameterTaintnessPropertyDatabase.getProperty(calledMethod.getMethodDescriptor());
         if (prop != null) {
+        	SignatureParser sigParser = new SignatureParser(calledMethod.getSignature());
+            Iterator<String> parameterIterator = sigParser.parameterSignatureIterator();
             for (int i = 0; i < calledMethod.getNumParams(); ++i) {
                 TaintnessValue v = values.get(shift + i);
                 v.setTainted(prop.isTaint(i) & v.getTainted());
                 v.setUntainted(prop.isUntaint(i) | v.getUntainted());
 
+                String paramSig = parameterIterator.next();
+            	if (paramSig.equals("D") || paramSig.equals("J")){
+            		i++;
+            	}
                 if (prop.isDirectSink()) {
                     SourceLineAnnotation source =
                             SourceLineAnnotation.fromVisitedInstruction(javaClassAndMethod.toMethodDescriptor(), getLocation());

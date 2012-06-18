@@ -96,32 +96,34 @@ public class TaintnessAnalysis extends BackwardFrameDataflowAnalysis<TaintnessVa
 
     public void meetInto(TaintnessFrame fact, Edge edge, TaintnessFrame result, boolean propagatePhiNodeInformation)
             throws DataflowAnalysisException {
-        TaintnessFrame tmpFact = fact;
-        if (edge.getSource().isExceptionThrower() && edge.getType() == EdgeTypes.UNHANDLED_EXCEPTION_EDGE
-                || edge.getType() == EdgeTypes.HANDLED_EXCEPTION_EDGE) {
-            // Exception thrower - restore operand stack
-            tmpFact = modifyFrame(fact, null);
-
-            XMethod method = XFactory.createXMethod(javaClassAndMethod);
-            try {
-                StackDepthDataflow dataflow = Global.getAnalysisCache()
-                        .getMethodAnalysis(StackDepthDataflow.class, method.getMethodDescriptor());
-                BasicBlock source = edge.getSource();
-                Location loc = new Location(source.getExceptionThrower(), source);
-                StackDepth depth = dataflow.getFactAtLocation(loc);
-                tmpFact.clearStack();
-                for (int i = 0; i < depth.getDepth(); ++i) {
-                    tmpFact.pushValue(new TaintnessValue());
-                }
-                if (DEBUG) {
-                    System.out.println("Edge transfer (ex thr) from "
-                            + edge.getSource() + " to " + edge.getTarget() + " -> " + fact);
-                }
-            } catch (CheckedAnalysisException e) {
-                throw new DataflowAnalysisException("Error handling throw block", e);
-            }
-        }
-
+    	TaintnessFrame tmpFact = fact;
+        if(fact.isValid()){	    	
+	        if (edge.getSource().isExceptionThrower() && edge.getType() == EdgeTypes.UNHANDLED_EXCEPTION_EDGE
+	                || edge.getType() == EdgeTypes.HANDLED_EXCEPTION_EDGE) {
+	            // Exception thrower - restore operand stack
+	            tmpFact = modifyFrame(fact, null);
+	
+	            XMethod method = XFactory.createXMethod(javaClassAndMethod);
+	            try {
+	                StackDepthDataflow dataflow = Global.getAnalysisCache()
+	                        .getMethodAnalysis(StackDepthDataflow.class, method.getMethodDescriptor());
+	                BasicBlock source = edge.getSource();
+	                Location loc = new Location(source.getExceptionThrower(), source);
+	                StackDepth depth = dataflow.getFactAtLocation(loc);
+	                tmpFact.clearStack();
+	                for (int i = 0; i < depth.getDepth(); ++i) {
+	                    tmpFact.pushValue(new TaintnessValue());
+	                }
+	                if (DEBUG) {
+	                    System.out.println("Edge transfer (ex thr) from "
+	                            + edge.getSource() + " to " + edge.getTarget() + " -> " + fact);
+	                }
+	            } catch (CheckedAnalysisException e) {
+	                throw new DataflowAnalysisException("Error handling throw block", e);
+	            }
+	        }
+        }//if fact is valid
+        
         mergeInto(tmpFact, result);
     }
 

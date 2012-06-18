@@ -3,8 +3,8 @@ TaintedResult|java.sql.ResultSet|getString|(I)Ljava/lang/String;|non-static
 TaintedResult|java.lang.System|getenv|(Ljava/lang/String;)Ljava/lang/String;|static
 TaintedResult|javax.servlet.ServletRequest|getParameter|(Ljava/lang/String;)Ljava/lang/String;|non-static
 TaintedResult|javax.servlet.ServletRequest|getParameterValues|(Ljava/lang/String;)[Ljava/lang/String;|non-static
-TaintedResult|javax.servlet.ServletRequest|getParameterMap|(Ljava/lang/String;)Ljava/util/Map;|non-static
-TaintedResult|javax.servlet.ServletRequest|getParameterNames|(Ljava/lang/String;)Ljava/util/Enumeration;|non-static
+TaintedResult|javax.servlet.ServletRequest|getParameterMap|()Ljava/util/Map;|non-static
+TaintedResult|javax.servlet.ServletRequest|getParameterNames|()Ljava/util/Enumeration;|non-static
 TaintedResult|javax.servlet.http.HttpServletRequest|getCookies|()[Ljavax/servlet/http/Cookie;|non-static
 TaintedResult|javax.servlet.http.HttpServletRequest|getRequestedSessionId|()Ljava/lang/String;|non-static
 TaintedResult|javax.servlet.ServletRequest|getScheme|()Ljava/lang/String;|non-static
@@ -49,6 +49,15 @@ Sensitive|java.sql.Statement|execute|(Ljava/lang/String;I)B|non-static|0
 Sensitive|java.sql.Statement|execute|(Ljava/lang/String;[Ljava/lang/String;)B|non-static|0
 Sensitive|java.sql.Statement|execute|(Ljava/lang/String;[I)B|non-static|0
 Sensitive|java.sql.Statement|addBatch|(Ljava/lang/String;)V|non-static|0
+Sensitive|java.sql.Connection|prepareStatement|(Ljava/lang/String;)Ljava/sql/PreparedStatement;|non-static|0
+Sensitive|java.sql.Connection|prepareStatement|(Ljava/lang/String;I)Ljava/sql/PreparedStatement;|non-static|0
+Sensitive|java.sql.Connection|prepareStatement|(Ljava/lang/String;[I)Ljava/sql/PreparedStatement;|non-static|0
+Sensitive|java.sql.Connection|prepareStatement|(Ljava/lang/String;II)Ljava/sql/PreparedStatement;|non-static|0
+Sensitive|java.sql.Connection|prepareStatement|(Ljava/lang/String;III)Ljava/sql/PreparedStatement;|non-static|0
+Sensitive|java.sql.Connection|prepareStatement|(Ljava/lang/String;[Ljava/lang/String;)Ljava/sql/PreparedStatement;|non-static|0
+Sensitive|java.sql.Connection|prepareCall|(Ljava/lang/String;)Ljava/sql/CallableStatement;|non-static|0
+Sensitive|java.sql.Connection|prepareCall|(Ljava/lang/String;II)Ljava/sql/CallableStatement;|non-static|0
+Sensitive|java.sql.Connection|prepareCall|(Ljava/lang/String;III)Ljava/sql/CallableStatement;|non-static|0
 Sensitive|javax.servlet.http.HttpServletResponse|sendRedirect|(Ljava/lang/String;)V|non-static|0
 Sensitive|javax.servlet.http.HttpServletResponse|setContentType|(Ljava/lang/String;)V|non-static|0
 Sensitive|javax.servlet.http.HttpServletResponse|setHeader|(Ljava/lang/String;Ljava/lang/String;)|non-static|1
