@@ -63,7 +63,7 @@ public class TaintValueFrameModelingVisitor extends AbstractFrameModelingVisitor
             	pushValue.meetWith(array);
             }
             frame.pushValue(pushValue);
-            
+            //source line annotation?
         } catch (DataflowAnalysisException e) {
             throw new InvalidBytecodeException("Stack underflow: " + e.getMessage());
         }
@@ -103,6 +103,7 @@ public class TaintValueFrameModelingVisitor extends AbstractFrameModelingVisitor
 		TaintValue pushValue = new TaintValue(TaintValue.UNTAINTED);
 		if(ta == TaintedAnnotation.ALWAYS_TAINTED){
 			pushValue = new TaintValue(TaintValue.TAINTED, 0);
+			/*add source annotation?*/
 		}
         modelInstruction(obj, getNumWordsConsumed(obj), getNumWordsProduced(obj), pushValue);
 

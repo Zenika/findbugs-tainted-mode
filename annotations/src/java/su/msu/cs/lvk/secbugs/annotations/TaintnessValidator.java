@@ -7,8 +7,10 @@ import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 
 /**
- * This annotation is applicable to validator function, that
+ * This annotation is applicable to validator function (boolean), that
  * should return true if parameter is untainted.
+ * 
+ * for example : javax.util.regex.Pattern.matcher(String).matches()
  *
  * @author Igor Konnov
  */

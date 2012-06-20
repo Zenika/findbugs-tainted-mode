@@ -48,7 +48,7 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
         sensitiveParamTypeQualifierValue = TypeQualifierValue.getValue(sensitiveClassDesc, null);
         
         readDefaultAnnotationsDatabase();
-        //readDatabaseIfPresent();
+        readDatabaseIfPresent(); //external database, can be edited by hand or with tesa plugin
     }
 
     /* (non-Javadoc)
@@ -202,39 +202,6 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
 
         return TaintedAnnotation.ALWAYS_TAINTED;
     }
-    
-    /*
-    private void addDefaultTaintAnnotations(){
-
-		//add field annotation for System.in
-
-    	addMethodAnnotation("javax.servlet.ServletRequest", "getParameter", "(Ljava/lang/String;)Ljava/lang/String;", false,
-                new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(TAINTED_RESULT_ANNOTATION)));
-    	
-    	addMethodAnnotation("javax.servlet.ServletRequest", "getParameterValues", "(Ljava/lang/String;)[Ljava/lang/String;", false,
-                new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(TAINTED_RESULT_ANNOTATION)));
-    	
-    	addMethodAnnotation("java.sql.ResultSet", "getString", "(I)Ljava/lang/String;", false,
-                new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(TAINTED_RESULT_ANNOTATION)));
-    	
-    	addMethodAnnotation("java.util.Scanner", "next", "()Ljava/lang/String;", false,
-                new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(TAINTED_RESULT_ANNOTATION)));
-    	addMethodAnnotation("java.util.Scanner", "nextLine", "()Ljava/lang/String;", false,
-                new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(TAINTED_RESULT_ANNOTATION)));
-    	
-    	
-    	addMethodParameterAnnotation("java.sql.Statement", "executeQuery", "(Ljava/lang/String;)Ljava/sql/ResultSet;", false, 0,
-                new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(SENSITIVE_PARAM_ANNOTATION)));
-    	addMethodParameterAnnotation("java.sql.Statement", "execute", "(Ljava/lang/String;)Ljava/sql/ResultSet;", false, 0,
-                new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(SENSITIVE_PARAM_ANNOTATION)));
-    	
-    	addMethodParameterAnnotation("java.io.PrintWriter", "println", "(Ljava/lang/String;)V", false, 0,
-                new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(SENSITIVE_PARAM_ANNOTATION)));
-    	addMethodParameterAnnotation("java.io.File", "<init>", "(Ljava/lang/String;)V", false, 0,
-                new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(SENSITIVE_PARAM_ANNOTATION)));
-        
-    	
-    }*/
     
     private void readDefaultAnnotationsDatabase(){
     	String file = DEFAULT_DATABASE_FILENAME;
