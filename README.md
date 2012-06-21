@@ -11,19 +11,19 @@ The project hasn't been modified since 2009.
 Secbugs detector has been modified and improved to work by its own, with a list of source and sink methods. It can still work with tesa, and methods can be added using the plugin.
  
 For now, the vulnerabilities detected are : 
-	- SQL injection
-	- command injection
-	- cross site scripting
-	- cookie poisoning
-	- path traversal
-	- HTTP splitting 
+ - SQL injection
+ - command injection
+ - cross site scripting
+ - cookie poisoning
+ - path traversal
+ - HTTP splitting 
 	
 Input sources are 
-	- command line parameters
-	- environment variables
-	- system properties
-	- data retrieved from database
-	- web requests (servlet, http)	
+ - command line parameters
+ - environment variables
+ - system properties
+ - data retrieved from database
+ - web requests (servlet, http)	
 
 
 Building from source
