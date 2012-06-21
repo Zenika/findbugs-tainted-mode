@@ -15,21 +15,21 @@ public abstract class AbstractFindbugsTestCase extends TestCase {
     private BugCollection bugCollection;
 
     protected void runFindBugs(String targetClassName, String targetMethodName, String bugType) {
-        String executable = getFindbugsExecutable();
-        String testClasspath = getTestClasspath();
-        String auxClasspath = getAuxClasspath();
-        String srcClasspath = getSourceClasspath();
+        String executable = "C:\\Users\\Souad\\Documents\\logiciels\\findbugs-2.0.0\\bin\\findbugs.bat";//getFindbugsExecutable();
+        String testClasspath = "C:\\Users\\Souad\\Documents\\WorkspaceFBJEE\\secbugs\\build\\ant\\tests\\cases";//getTestClasspath();
+        String auxClasspath = "C:\\Users\\Souad\\Documents\\WorkspaceFBJEE\\secbugs\\build\\ant\\annotations";//getAuxClasspath();
+        String srcClasspath = "C:\\Users\\Souad\\Documents\\WorkspaceFBJEE\\secbugs\\tests\\cases\\src\\cases";//getSourceClasspath();
         FindBugs2.clearAnalysisContext();
         File filterFile = createFilterFile(targetClassName, targetMethodName, bugType);
         File outputFile = getOutputFile();
 
         if (true) {
             String[] args = {
-                    executable, "-textui",
+                    executable,"-textui",
                     "-auxclasspath", auxClasspath,
                     "-sourcepath", srcClasspath,
                     "-include", filterFile.getAbsolutePath(),
-                    "-xml", "-output", outputFile.getAbsolutePath(),
+                    "-xml", "-output", outputFile.getAbsolutePath(),"-debug",
                     testClasspath
             };
             runFindBugsInSeparateProcess(args);
@@ -111,7 +111,7 @@ public abstract class AbstractFindbugsTestCase extends TestCase {
         BugCollection collection = new SortedBugCollection();
         File outputFile = getOutputFile();
         try {
-            collection.readXML(outputFile.getAbsolutePath(), project);
+            collection.readXML(outputFile.getAbsolutePath());//, project);
         } catch (IOException e) {
             throw new RuntimeException("Error reading output collection: " + outputFile, e);
         } catch (DocumentException e) {
@@ -130,7 +130,7 @@ public abstract class AbstractFindbugsTestCase extends TestCase {
     }
 
     public File getOutputFile() {
-        return new File(getSystemProperty("build.dir"), "output.xml");
+        return new File("build/ant", "output.xml");
     }
 
     private File createFilterFile(String targetClassName, String targetMethodName, String bugType) {
@@ -158,7 +158,7 @@ public abstract class AbstractFindbugsTestCase extends TestCase {
     }
 
     public String getBuildDir() {
-        return getSystemProperty("build.dir");
+        return "build/ant";//getSystemProperty("build.dir");
     }
 
     public String getAuxClasspath() {

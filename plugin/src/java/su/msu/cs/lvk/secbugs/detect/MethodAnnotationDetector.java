@@ -106,59 +106,27 @@ public class MethodAnnotationDetector extends CFGDetector {
         IsResultTaintedProperty property = isResultTaintedPropertyDatabase.getProperty(callee.getMethodDescriptor());
         if (property == null) {
             TaintedAnnotation annotation = taintAnnotationDatabase.getResolvedAnnotation(callee, false);
-            if (annotation != null) {
-                BugInstance bug = new BugInstance(this, "TI_DANGEROUS_POINT", Detector2.NORMAL_PRIORITY);
-                bug.addClass(callee.getClassDescriptor());
-                bug.addMethod(callee);
-                bug.describe("Result of the method may be tainted");
-                bugReporter.reportBug(bug);
-            }
-
             property = new IsResultTaintedProperty(annotation != null);
             isResultTaintedPropertyDatabase.setProperty(callee.getMethodDescriptor(), property);
         }
 
-        if (caller != null && callLoc != null && property.isTainted()) {
-            BugInstance bug = new BugInstance(this, "TI_CALL_TAINTED_SOURCE", Detector2.NORMAL_PRIORITY);
-            bug.addClass(caller.getClassDescriptor());
-            bug.addMethod(caller);
-            bug.addCalledMethod(callee.getClassName(), callee.getName(), callee.getSignature(), callee.isStatic());
-            bug.addSourceLine(caller.getMethodDescriptor(), callLoc)
-                    .describe("Potentially dangerous call to tainted data source");
-            bugReporter.reportBug(bug);
-        }
     }
 
     private void checkKeyIndicator(XMethod caller, Location callLoc, XMethod callee) {
         KeyIndicatorAnnotation annotation = keyIndicatorAnnotationDatabase.getResolvedAnnotation(callee, false);
         if (annotation != null) {
-            if (caller != null && callLoc != null) {
-                BugInstance bug = new BugInstance(this, "TI_CALL_KEY_INDICATOR", Detector2.NORMAL_PRIORITY);
-                bug.addClass(caller.getClassDescriptor());
-                bug.addMethod(caller);
-                bug.addCalledMethod(callee.getClassName(), callee.getName(), callee.getSignature(), callee.isStatic());
-                bug.addSourceLine(caller.getMethodDescriptor(), callLoc)
-                        .describe("Call to a key indicator");
-                bugReporter.reportBug(bug);
-            }
-
             KeyIndicatorProperty property = keyIndicatorPropertyDatabase.getProperty(callee.getMethodDescriptor());
 
             if (property == null) {
                 keyIndicatorPropertyDatabase.setProperty(callee.getMethodDescriptor(),
                         annotation.toKeyIndicatorProperty());
-
-                BugInstance bug = new BugInstance(this, "TI_KEY_INDICATOR", Detector2.NORMAL_PRIORITY);
-                bug.addClass(callee.getClassDescriptor());
-                bug.addMethod(callee);
-                bug.describe("Key indicator: " + annotation);
-                bugReporter.reportBug(bug);
             }
         }
     }
 
     private void checkParameterAnnotations(XMethod caller, Location callLoc, XMethod callee) {
         ParameterTaintnessProperty prop = parameterTaintnessPropertyDatabase.getProperty(callee.getMethodDescriptor());
+        
         if (prop == null) {
             // check for parameter annotations
             prop = new ParameterTaintnessProperty();
@@ -168,7 +136,6 @@ public class MethodAnnotationDetector extends CFGDetector {
                 if (annotation != null && annotation.equals(TaintedAnnotation.NEVER_TAINTED)) {
                     prop.setUntaint(i, true);
                     prop.setDirectSink(true);
-                    reportSensitiveParameter(callee, i);
                 } else {
                     prop.setTaint(i, true);
                 }
@@ -182,27 +149,6 @@ public class MethodAnnotationDetector extends CFGDetector {
             parameterTaintnessPropertyDatabase.setProperty(callee.getMethodDescriptor(), prop);
         }
 
-        if (caller != null && callLoc != null) {
-            for (int i = 0; i < callee.getNumParams(); ++i) {
-                if (prop.isUntaint(i)) {
-                    BugInstance bug = new BugInstance(this, "TI_CALL_SENSITIVE_SINK", Detector2.NORMAL_PRIORITY);
-                    bug.addClass(caller.getClassDescriptor());
-                    bug.addMethod(caller);
-                    bug.addCalledMethod(callee.getClassName(), callee.getName(), callee.getSignature(), callee.isStatic());
-                    bug.addSourceLine(caller.getMethodDescriptor(), callLoc);
-                    bug.describe("Call to method, which parameter " + i + " should be never tainted");
-                    bugReporter.reportBug(bug);
-                }
-            }
-        }
-    }
-
-    private void reportSensitiveParameter(XMethod method, int i) {
-        BugInstance bug = new BugInstance(this, "TI_DANGEROUS_POINT", Detector2.NORMAL_PRIORITY);
-        bug.addClass(method.getClassDescriptor());
-        bug.addMethod(method);
-        bug.describe("Parameter " + i + " should be never tainted");
-        bugReporter.reportBug(bug);
     }
 
     private void checkAndSetDatabases() throws CheckedAnalysisException {

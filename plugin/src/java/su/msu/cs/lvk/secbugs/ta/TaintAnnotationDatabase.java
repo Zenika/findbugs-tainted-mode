@@ -13,6 +13,7 @@ import edu.umd.cs.findbugs.classfile.Global;
 import edu.umd.cs.findbugs.classfile.analysis.AnnotatedObject;
 import edu.umd.cs.findbugs.classfile.analysis.AnnotationValue;
 import edu.umd.cs.findbugs.classfile.analysis.ClassInfo;
+import edu.umd.cs.findbugs.classfile.analysis.FieldInfo;
 import edu.umd.cs.findbugs.classfile.analysis.MethodInfo;
 import edu.umd.cs.findbugs.log.Profiler;
 
@@ -27,7 +28,9 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
     /**
      * Filename of database, where annotations are stored externally.
      */
-    public static final String DATABASE_FILENAME = ".secbugs_annotations";
+    public static final String EXTERNAL_DATABASE_FILENAME = ".secbugs_annotations";
+    
+    public static final String DEFAULT_DATABASE_FILENAME = "defaultAnnotations.db";
 
     private static final boolean DEBUG = SystemProperties.getBoolean("secbugs.ta.debug");
 
@@ -43,15 +46,16 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
         taintedResultTypeQualifierValue = TypeQualifierValue.getValue(classDesc, null);
         ClassDescriptor sensitiveClassDesc = DescriptorFactory.instance().getClassDescriptor(SENSITIVE_PARAM_ANNOTATION);
         sensitiveParamTypeQualifierValue = TypeQualifierValue.getValue(sensitiveClassDesc, null);
-
-        readDatabaseIfPresent();
+        
+        readDefaultAnnotationsDatabase();
+        readDatabaseIfPresent(); //external database, can be edited by hand or with tesa plugin
     }
 
     /* (non-Javadoc)
      * @see edu.umd.cs.findbugs.ba.INullnessAnnotationDatabase#getResolvedAnnotation(java.lang.Object, boolean)
      */
     public TaintedAnnotation getResolvedAnnotation(Object o, boolean getMinimal) {
-        Profiler profiler = Profiler.getInstance();
+        Profiler profiler = Global.getAnalysisCache().getProfiler();
         profiler.start(this.getClass());
         try {
             if (DEBUG) {
@@ -62,7 +66,6 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
 
             if (o instanceof XMethodParameter) {
                 XMethodParameter param = (XMethodParameter) o;
-
                 tqa = TypeQualifierApplications.getEffectiveTypeQualifierAnnotation(
                         param.getMethod(), param.getParameterNumber(), sensitiveParamTypeQualifierValue);
             } else if (o instanceof XMethod || o instanceof XField) {
@@ -79,31 +82,6 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
             profiler.end(this.getClass());
         }
     }
-
-    /*
-    public void addFieldAnnotation(String cName, String mName, String mSig, boolean isStatic, TaintedAnnotation annotation) {
-        if (DEBUG) {
-            System.out.println("addFieldAnnotation: annotate " + cName + "." + mName + " with " + annotation);
-        }
-
-        XField xfield = XFactory.createXField(cName, mName, mSig, isStatic);
-        if (!(xfield instanceof FieldInfo)) {
-            if (DEBUG) {
-                System.out.println("  Field not found! " + cName + "." + mName + ":" + mSig + " " + isStatic + " " + annotation);
-            }
-            return;
-        }
-
-        // Get JSR-305 nullness annotation type
-        ClassDescriptor nullnessAnnotationType = getNullnessAnnotationClassDescriptor(annotation);
-
-        // Create an AnnotationValue
-        AnnotationValue annotationValue = new AnnotationValue(nullnessAnnotationType);
-
-        // Destructively add the annotation to the FieldInfo object
-        ((FieldInfo) xfield).addAnnotation(annotationValue);
-    }
-    */
 
     public XMethod getXMethod(String cName, String mName, String sig, boolean isStatic) {
         ClassDescriptor classDesc = DescriptorFactory.instance().getClassDescriptorForDottedClassName(cName);
@@ -180,6 +158,27 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
         // Destructively add the annotation to the MethodInfo object
         ((MethodInfo) xmethod).addParameterAnnotation(param, annotationValue);
     }
+    
+    
+    public void addFieldAnnotation(String cName, String fName, String fSig, boolean isStatic, TaintedAnnotation annotation) {
+        if (DEBUG) {
+            System.out.println("addFieldAnnotation: annotate " + cName + "." + fName + " with " + annotation);
+        }
+
+        XField xfield = XFactory.createXField(cName, fName, fSig, isStatic);
+        if (!(xfield instanceof FieldInfo)) {
+            if (DEBUG) {
+                System.out.println("  Field not found! " + cName + "." + fName + ":" + fSig + " " + isStatic + " " + annotation);
+            }
+            return;
+        }
+
+        AnnotationValue annotationValue = new AnnotationValue(DescriptorFactory.instance().getClassDescriptor(TAINTED_RESULT_ANNOTATION));
+
+        // Destructively add the annotation to the FieldInfo object
+        ((FieldInfo) xfield).addAnnotation(annotationValue);
+    }
+    
 
     /**
      * Convert a TaintedResult-based TypeQualifierAnnotation
@@ -203,9 +202,38 @@ public class TaintAnnotationDatabase extends AnnotationDatabase<TaintedAnnotatio
 
         return TaintedAnnotation.ALWAYS_TAINTED;
     }
+    
+    private void readDefaultAnnotationsDatabase(){
+    	String file = DEFAULT_DATABASE_FILENAME;
+    	InputStream in = this.getClass().getResourceAsStream(DEFAULT_DATABASE_FILENAME);
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(in));
+            String line = reader.readLine();
+            while (line != null) {
+                parseLine(line);
+                line = reader.readLine();
+            }
+        } catch (FileNotFoundException e) {
+            if (DEBUG) {
+                System.out.println("TaintedAnnotationDatabase file " + file + " not found");
+            }
+        } catch (IOException e) {
+            System.err.println("Exception while reading TaintedAnnotationDatabase file: " + file);
+            e.printStackTrace(System.err);
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+        }
+    }
 
     private void readDatabaseIfPresent() {
-        File file = new File(FindBugs.getHome(), DATABASE_FILENAME);
+        File file = new File(FindBugs.getHome(), EXTERNAL_DATABASE_FILENAME);
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new FileReader(file));

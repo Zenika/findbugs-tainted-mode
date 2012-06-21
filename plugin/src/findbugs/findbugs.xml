@@ -20,8 +20,7 @@
     </OrderingConstraints>
 
     <Detector class="su.msu.cs.lvk.secbugs.detect.MethodAnnotationDetector" speed="fast"
-              disabled="false" hidden="false"
-              reports="TI_DANGEROUS_POINT,TI_DANGEROUS_CALL,TI_KEY_INDICATOR,TI_CALL_SENSITIVE_SINK,TI_CALL_TAINTED_SOURCE,TI_CALL_KEY_INDICATOR"/>
+              disabled="false" hidden="true"/>
 
     <Detector class="su.msu.cs.lvk.secbugs.detect.TaintnessDetector" speed="slow"
               disabled="false" hidden="true"/>
@@ -30,11 +29,5 @@
               disabled="false" reports="TI_TAINTED_INJECTION"/>
 
     <BugPattern type="TI_TAINTED_INJECTION" abbrev="TI" category="WEB_VULNERABILITY"/>
-    <BugPattern type="TI_DANGEROUS_POINT" abbrev="TIDP" category="WEB_VULNERABILITY"/>
-    <BugPattern type="TI_DANGEROUS_CALL" abbrev="TIDC" category="WEB_VULNERABILITY"/>
-    <BugPattern type="TI_KEY_INDICATOR" abbrev="TIKI" category="WEB_VULNERABILITY"/>
-
-    <BugPattern type="TI_CALL_SENSITIVE_SINK" abbrev="TICSS" category="WEB_VULNERABILITY"/>
-    <BugPattern type="TI_CALL_TAINTED_SOURCE" abbrev="TICTS" category="WEB_VULNERABILITY"/>
-    <BugPattern type="TI_CALL_KEY_INDICATOR" abbrev="TICKI" category="WEB_VULNERABILITY"/>
+    
 </FindbugsPlugin>

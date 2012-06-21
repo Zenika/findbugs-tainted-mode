@@ -1,8 +1,7 @@
 package su.msu.cs.lvk.secbugs.cases;
 
 /**
- * This is actually a hard-case for our detectors.
- * I do not know how to propagate such a taintness in findbugs.
+ * this one works now
  *
  * @author Igor Konnov
  */

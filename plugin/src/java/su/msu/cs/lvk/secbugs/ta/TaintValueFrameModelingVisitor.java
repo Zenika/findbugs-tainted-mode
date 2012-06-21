@@ -9,6 +9,7 @@ import edu.umd.cs.findbugs.classfile.CheckedAnalysisException;
 import edu.umd.cs.findbugs.classfile.Global;
 import org.apache.bcel.Constants;
 import org.apache.bcel.generic.*;
+
 import su.msu.cs.lvk.secbugs.util.HierarchyUtil;
 
 import java.util.Collection;
@@ -41,7 +42,74 @@ public class TaintValueFrameModelingVisitor extends AbstractFrameModelingVisitor
     public void visitINVOKEINTERFACE(INVOKEINTERFACE obj) {
         handleInvoke(obj);
     }
+    
+    public void visitINVOKESPECIAL(INVOKESPECIAL obj){
+    	handleInvoke(obj);
+    }
+    
+    public void visitAALOAD(AALOAD obj) {
+    	/*
+    	 * check if the reference array is tainted
+    	 */
+    	// To determine the taint value pushed on the stack,
+        // we look at the array reference which was
+        // popped off of the stack.
+        TaintValueFrame frame = getFrame();
+        try {
+            frame.popValue(); // index
+            TaintValue array = frame.popValue(); // arrayref
+            TaintValue pushValue = new TaintValue(TaintValue.UNTAINTED);
+            if (array.getKind() == TaintValue.TAINTED) {
+            	pushValue.meetWith(array);
+            }
+            frame.pushValue(pushValue);
+            //source line annotation?
+        } catch (DataflowAnalysisException e) {
+            throw new InvalidBytecodeException("Stack underflow: " + e.getMessage());
+        }
+        
+    	
+    }
+    
+    public void visitPUTFIELD(PUTFIELD obj){
+    	XField field = XFactory.createXField(obj, cpg);
+    	TaintAnnotationDatabase tadb = Global.getAnalysisCache().getDatabase(TaintAnnotationDatabase.class);
+    	TaintValueFrame frame = getFrame();
+    	
+    	try {
+			TaintValue top = frame.getTopValue();
+			if (top.getKind() == TaintValue.TAINTED){
+				//add tainted annotation to the field that holds a tainted value
+				tadb.addFieldAnnotation(field.getClassName(), field.getName(), field.getSignature(), field.isStatic(), TaintedAnnotation.ALWAYS_TAINTED);
+			}
+	        super.visitPUTFIELD(obj);
+		} catch (DataflowAnalysisException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    }
+    
+    public void visitGETFIELD(GETFIELD obj){
+    	//create the field and ask database for its tainted annotation
+    	if (getNumWordsProduced(obj) != 1) {
+            super.visitGETFIELD(obj);
+            return;
+        }
+		XField field = XFactory.createXField(obj, cpg);
+		TaintedAnnotation ta = Global.getAnalysisCache()
+				.getDatabase(TaintAnnotationDatabase.class)
+				.getResolvedAnnotation(field, false);
+		TaintValue pushValue = new TaintValue(TaintValue.UNTAINTED);
+		if(ta == TaintedAnnotation.ALWAYS_TAINTED){
+			pushValue = new TaintValue(TaintValue.TAINTED, 0);
+			/*add source annotation?*/
+		}
+        modelInstruction(obj, getNumWordsConsumed(obj), getNumWordsProduced(obj), pushValue);
 
+    }
+
+    
     public void handleLoadInstruction(LoadInstruction obj) {
         super.handleLoadInstruction(obj);
 
@@ -114,13 +182,13 @@ public class TaintValueFrameModelingVisitor extends AbstractFrameModelingVisitor
 
 	    if (property != null) {
 	       if (property.isTainted()) {
-	   	   if (TaintAnalysis.DEBUG) {
-		       System.out.println("Method " + calledMethod + " returns tainted data");
-		   }
-		   pushValue = new TaintValue(TaintValue.TAINTED, 0);
-		   SourceLineAnnotation source = SourceLineAnnotation
-			.fromVisitedInstruction(javaClassAndMethod.toMethodDescriptor(), getLocation());
-		   pushValue.setSourceLineAnnotation(source);
+		   	   if (TaintAnalysis.DEBUG) {
+			       System.out.println("Method " + calledMethod + " returns tainted data");
+			   }
+			   pushValue = new TaintValue(TaintValue.TAINTED, 0);
+			   SourceLineAnnotation source = SourceLineAnnotation
+				.fromVisitedInstruction(javaClassAndMethod.toMethodDescriptor(), getLocation());
+			   pushValue.setSourceLineAnnotation(source);
 	       }
 	    } else {
 	       throw new RuntimeException("Property must be set by MethodAnnotationDetector");
@@ -159,7 +227,7 @@ public class TaintValueFrameModelingVisitor extends AbstractFrameModelingVisitor
      * @param calledMethod reference to called method
      */
     private void propagateTaintedParameterToThis(XMethod calledMethod) {
-        if (!calledMethod.isStatic()) {
+    	if (!calledMethod.isStatic()) {
             try {
                 TaintValueFrame frame = getFrame();
                 TaintValue result = new TaintValue(TaintValue.UNTAINTED);
