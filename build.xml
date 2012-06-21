@@ -1,0 +1,158 @@
+<project name="secbugs" default="dist" basedir=".">
+    <description>
+        simple example build file
+    </description>
+
+    <!-- set global properties for this build -->
+    <property name="build.dir" location="build/ant"/>
+    <property name="dist.dir" location="dist"/>
+
+    <property name="plugin.src.dir" location="plugin/src"/>
+    <property name="plugin.build.dir" location="${build.dir}/plugin"/>
+    <property name="plugin.jar.name" location="${dist.dir}/secbugs.jar"/>
+
+    <property name="annotations.src.dir" location="annotations/src"/>
+    <property name="annotations.build.dir" location="${build.dir}/annotations"/>
+    <property name="annotations.jar.name" location="${dist.dir}/secbugs_annotations.jar"/>
+
+    <property name="test.cases.src.dir" location="tests/cases/src/cases"/>
+    <property name="test.cases.build.dir" location="${build.dir}/tests/cases"/>
+    <property name="test.junit.src.dir" location="tests/cases/src/junit"/>
+    <property name="test.junit.build.dir" location="${build.dir}/tests/junit"/>
+
+    <property name="lib.dir" location="lib"/>
+
+    <property file="build.properties"/>
+
+    <path id="lib.classpath">
+        <fileset dir="${lib.dir}">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+    <path id="test.classpath">
+        <path refid="lib.classpath"/>
+        <pathelement location="${annotations.build.dir}"/>
+        <pathelement location="${plugin.build.dir}"/>
+    </path>
+
+    <target name="init">
+        <!-- Create the build directory structure used by compile -->
+        <mkdir dir="${plugin.build.dir}"/>
+        <mkdir dir="${annotations.build.dir}"/>
+        <mkdir dir="${test.cases.build.dir}"/>
+        <mkdir dir="${test.junit.build.dir}"/>
+
+        <mkdir dir="${dist.dir}"/>
+    </target>
+
+    <target name="compile" depends="init" description="compile the source ">
+        <javac srcdir="${plugin.src.dir}/java" destdir="${plugin.build.dir}" classpathref="lib.classpath"
+               debug="true" source="1.5" target="1.5"/>
+        <javac srcdir="${annotations.src.dir}/java" destdir="${annotations.build.dir}" classpathref="lib.classpath"/>
+
+        <javac srcdir="${test.cases.src.dir}" destdir="${test.cases.build.dir}" classpathref="test.classpath"
+               debug="true" source="1.5" target="1.5"/>
+
+        <javac srcdir="${test.junit.src.dir}" destdir="${test.junit.build.dir}" classpathref="test.classpath"
+               debug="true" source="1.5" target="1.5"/>
+
+        <copy todir="${plugin.build.dir}">
+            <fileset dir="${plugin.src.dir}/findbugs">
+                <include name="*.xml"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="dist" depends="compile" description="generate the distribution">
+        <mkdir dir="${dist.dir}/lib"/>
+
+        <jar jarfile="${plugin.jar.name}" basedir="${plugin.build.dir}"/>
+        <jar jarfile="${annotations.jar.name}" basedir="${annotations.build.dir}"/>
+    </target>
+
+    <target name="run-tests" depends="deploy-to-findbugs">
+        <path id="aux.classpath">
+            <pathelement location="${annotations.build.dir}"/>
+        </path>
+
+        <pathconvert property="aux.classpath.value" refid="aux.classpath"/>
+
+        <property name="junit.out.dir" value="${build.dir}/junit-out"/>
+        <mkdir dir="${junit.out.dir}"/>
+
+        <junit>
+            <sysproperty key="build.dir" value="${build.dir}"/>
+            <sysproperty key="aux.classpath" value="${aux.classpath.value}"/>
+            <sysproperty key="src.classpath" value="${test.cases.src.dir}"/>
+            <sysproperty key="test.classpath" value="${test.cases.build.dir}"/>
+            <sysproperty key="findbugs.home" value="${findbugs.home}"/>
+            <sysproperty key="findbugs.executable" value="${findbugs.executable}"/>
+
+            <classpath>
+                <pathelement location="${annotations.build.dir}"/>
+                <pathelement location="${test.cases.build.dir}"/>
+                <pathelement location="${test.junit.build.dir}"/>
+                <pathelement location="${plugin.build.dir}"/>
+
+                <path refid="lib.classpath"/>
+            </classpath>
+
+            <formatter type="plain"/>
+
+            <batchtest fork="yes" todir="${junit.out.dir}">
+                <fileset dir="${test.junit.src.dir}">
+                    <include name="**/Test*.java"/>
+                    <exclude name="**/AllTests.java"/>
+                </fileset>
+            </batchtest>
+        </junit>
+    </target>
+
+    <target name="debug-run-test" depends="deploy-to-findbugs">
+        <path id="aux.classpath">
+            <pathelement location="${annotations.build.dir}"/>
+        </path>
+
+        <pathconvert property="aux.classpath.value" refid="aux.classpath"/>
+
+        <property name="junit.out.dir" value="${build.dir}/junit-out"/>
+        <mkdir dir="${junit.out.dir}"/>
+
+        <junit>
+            <sysproperty key="build.dir" value="${build.dir}"/>
+            <sysproperty key="aux.classpath" value="${aux.classpath.value}"/>
+            <sysproperty key="src.classpath" value="${test.cases.src.dir}"/>
+            <sysproperty key="test.classpath" value="${test.cases.build.dir}"/>
+            <sysproperty key="findbugs.home" value="${findbugs.home}"/>
+            <sysproperty key="findbugs.executable" value="${debug.findbugs.executable}"/>
+
+            <sysproperty key="ti.vis.debug" value="true"/>
+
+            <classpath>
+                <pathelement location="${annotations.build.dir}"/>
+                <pathelement location="${test.cases.build.dir}"/>
+                <pathelement location="${test.junit.build.dir}"/>
+
+                <path refid="lib.classpath"/>
+            </classpath>
+
+            <formatter type="plain"/>
+
+            <test name="${debug.testcase}"
+                     fork="yes" todir="${junit.out.dir}" >
+            </test>
+        </junit>
+    </target>
+
+    <target name="deploy-to-findbugs" depends="dist">
+        <copy todir="${findbugs.home}/plugin" file="${plugin.jar.name}"/>
+    </target>
+
+    <target name="clean"
+            description="clean up">
+        <delete dir="${build.dir}"/>
+        <delete dir="${dist.dir}"/>
+    </target>
+</project>
+

@@ -1,0 +1,40 @@
+<FindbugsPlugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:noNamespaceSchemaLocation="findbugsplugin.xsd"
+                pluginid="su.msu.cs.lvk.secbugs"
+                defaultenabled="true"
+                provider="Teachable Static Analysis Workbench"
+                website="http://www.owasp.org/index.php/Category:OWASP_Teachable_Static_Analysis_Workbench_Project">
+
+    <EngineRegistrar class="su.msu.cs.lvk.secbugs.EngineRegistrar"/>
+
+    <OrderingConstraints>
+        <SplitPass>
+            <Earlier class="su.msu.cs.lvk.secbugs.detect.MethodAnnotationDetector"/>
+            <Later class="su.msu.cs.lvk.secbugs.detect.TaintnessDetector"/>
+        </SplitPass>
+
+        <SplitPass>
+            <Earlier class="su.msu.cs.lvk.secbugs.detect.TaintnessDetector"/>
+            <Later class="su.msu.cs.lvk.secbugs.detect.TaintedInjection"/>
+        </SplitPass>
+    </OrderingConstraints>
+
+    <Detector class="su.msu.cs.lvk.secbugs.detect.MethodAnnotationDetector" speed="fast"
+              disabled="false" hidden="false"
+              reports="TI_DANGEROUS_POINT,TI_DANGEROUS_CALL,TI_KEY_INDICATOR,TI_CALL_SENSITIVE_SINK,TI_CALL_TAINTED_SOURCE,TI_CALL_KEY_INDICATOR"/>
+
+    <Detector class="su.msu.cs.lvk.secbugs.detect.TaintnessDetector" speed="slow"
+              disabled="false" hidden="true"/>
+
+    <Detector class="su.msu.cs.lvk.secbugs.detect.TaintedInjection" speed="slow"
+              disabled="false" reports="TI_TAINTED_INJECTION"/>
+
+    <BugPattern type="TI_TAINTED_INJECTION" abbrev="TI" category="WEB_VULNERABILITY"/>
+    <BugPattern type="TI_DANGEROUS_POINT" abbrev="TIDP" category="WEB_VULNERABILITY"/>
+    <BugPattern type="TI_DANGEROUS_CALL" abbrev="TIDC" category="WEB_VULNERABILITY"/>
+    <BugPattern type="TI_KEY_INDICATOR" abbrev="TIKI" category="WEB_VULNERABILITY"/>
+
+    <BugPattern type="TI_CALL_SENSITIVE_SINK" abbrev="TICSS" category="WEB_VULNERABILITY"/>
+    <BugPattern type="TI_CALL_TAINTED_SOURCE" abbrev="TICTS" category="WEB_VULNERABILITY"/>
+    <BugPattern type="TI_CALL_KEY_INDICATOR" abbrev="TICKI" category="WEB_VULNERABILITY"/>
+</FindbugsPlugin>
